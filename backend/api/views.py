@@ -80,17 +80,43 @@ class AllNotes(APIView):
     def get(self, request):
         Allnotes = notes.objects.all().order_by("-id")
         response = []
-        for note in Allnotes:
-            response.append({
-                "id": note.id,
-                "title": note.title,
-                "file_link": note.file_link,
-                "file_name": note.file_name,
-                "profile": note.profile,
-                "created_at": note.created_at,
-                "updated_at": note.updated_at,
-            })
-        return Response({"data": response})
+        if not request.user.is_superuser:
+            accessible_note_ids = accesseble_notes.objects.filter(
+                profile__user=request.user
+            ).values_list('note', flat=True)
+            requests_ = requests.objects.filter(profile__user=request.user)
+            for note in Allnotes:
+                access = note.id in accessible_note_ids
+                req = [r for r in requests_ if r.note == note]
+                if req:
+                    req = req[0]
+                    status = req.status 
+                else:
+                    status = None  
+                response.append({
+                    "id": note.id,
+                    "title": note.title,
+                    "file_link": note.file_link,
+                    "file_name": note.file_name,
+                    "profile": note.profile,
+                    "access": access,
+                    "status": status,
+                    "created_at": note.created_at,
+                    "updated_at": note.updated_at,
+                })
+            return Response({"data": response})
+        else: 
+            for note in Allnotes:
+                response.append({
+                    "id": note.id,
+                    "title": note.title,
+                    "file_link": note.file_link,
+                    "file_name": note.file_name,
+                    "profile": note.profile,
+                    "created_at": note.created_at,
+                    "updated_at": note.updated_at,
+                })
+            return Response({"data": response})
     
     def post(self, request):
         data = json.loads(request.body)
