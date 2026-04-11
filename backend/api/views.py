@@ -117,7 +117,7 @@ class AllNotes(APIView):
                     "updated_at": note.updated_at,
                 })
             return Response({"data": response})
-    
+        
     def post(self, request):
         data = json.loads(request.body)
         query = data.get('query')
@@ -160,7 +160,209 @@ class AllNotes(APIView):
                     "updated_at": note.updated_at,
                 })
             return Response({"data": response})
-    
+
+class AllGroups(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self, request):
+        response = []
+        if not request.user.is_superuser:
+            Allgroups = prof_group.objects.filter(profile__user=request.user).order_by("-id")
+            for pg in Allgroups:
+                group = pg.group
+                response.append({
+                    "id": group.id,
+                    "name": group.name,
+                    "created_at": group.created_at,
+                    "updated_at": group.updated_at,
+                })
+            return Response({"data": response})
+        else: 
+            Allgroups = prof_group.objects.filter().order_by("-id")
+            for pg in Allgroups:
+                group = pg.group
+                response.append({
+                    "id": group.id,
+                    "name": group.name,
+                    "created_at": group.created_at,
+                    "updated_at": group.updated_at,
+                })
+            return Response({"data": response})
+
+
+    def post(self, request):
+        data = json.loads(request.body)
+        query = data.get('query')
+        response=[]
+        if not request.user.is_superuser:
+            Allgroups = prof_group.objects.filter(name__icontains=query, profile__user=request.user).order_by("-id")
+            for pg in Allgroups:
+                group = pg.group
+                response.append({
+                    "id": group.id,
+                    "name": group.name,
+                    "created_at": group.created_at,
+                    "updated_at": group.updated_at,
+                })
+            return Response({"data": response})
+        else: 
+            Allgroups = prof_group.objects.filter(name__icontains=query).order_by("-id")
+            for pg in Allgroups:
+                group = pg.group
+                response.append({
+                    "id": group.id,
+                    "name": group.name,
+                    "created_at": group.created_at,
+                    "updated_at": group.updated_at,
+                })
+            return Response({"data": response})
+        
+    def delete(self, request):
+        if not request.user.is_superuser:
+            return Response({"error": "no permision accsess"}, status=403)
+        data = json.loads(request.body)
+        group_id = data.get('group_id')
+        group = get_object_or_404(groups, id=group_id)
+        group.delete()
+        return Response({"status": "group deleted"}, status=200)
+
+class GroupInfo(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self, request, group_id):
+        pg = prof_group.objects.filter(group__id=group_id).order_by("-id")
+        ng = note_group.objects.filter(group__id=group_id).order_by("-id")
+        response=[]
+        if not request.user.is_superuser:
+            profile = profiles.objects.get(user=request.user)
+            if pg.profile == profile:
+                users = []
+                notes = []
+                for item in pg:
+                    if item.profile.user.is_superuser:
+                        continue
+                    users.append({
+                        "user_id": item.profile.user.id,
+                        "prof_id": item.profile.id,
+                        "name": item.profile.user.username,
+                    })
+                for item in ng:
+                    notes.append({
+                        "id": item.note.id,
+                        "title": item.note.title,
+                        "file_name": item.note.file_name,
+                        "updated_at": item.note.updated_at
+                    })
+                response.append({
+                    "user":users,
+                    "notes":notes
+                })
+                return Response({"data": response}, status=200)
+            else:
+                return Response({"error": "no permision"}, status=403)
+        else:
+            users = []
+            notes = []
+            for item in pg:
+                if item.profile.user.is_superuser:
+                    continue
+                users.append({
+                    "user_id": item.profile.user.id,
+                    "prof_id": item.profile.id,
+                    "name": item.profile.user.username,
+                })
+            for item in ng:
+                notes.append({
+                    "id": item.note.id,
+                    "title": item.note.title,
+                    "file_name": item.note.file_name,
+                    "updated_at": item.note.updated_at
+                })
+            response.append({
+                "user":users,
+                "notes":notes
+            })
+            return Response({"data": response}, status=200)
+        
+    def post(self, request, group_id):
+        data = json.loads(request.body)
+        query = data.get('query', '')
+        action = data.get('action', '')
+        if action == "search":
+            ng = note_group.objects.filter(group__id=group_id, note__title__icontains=query).order_by("-id")
+
+            response=[]
+            notes = []
+            for item in ng:
+                notes.append({
+                    "id": item.note.id,
+                    "title": item.note.title,
+                    "file_name": item.note.file_name,
+                    "updated_at": item.note.updated_at
+                })
+            response.append({
+                "notes":notes
+            })
+            return Response({"data": response}, status=200)
+        elif action == "select_add_user":
+            pg = prof_group.objects.filter(
+                group__id=group_id
+            ).values_list('profile', flat=True)
+
+            profiles_not_in_group = profiles.objects.exclude(
+                id__in=pg
+            ).order_by("-id")
+            users = []
+            for item in profiles_not_in_group:
+                if item.profile.user.is_superuser:
+                    continue
+                users.append({
+                    "user_id": item.user.id,
+                    "prof_id": item.id,
+                    "name": item.user.username,
+                })
+            return Response({"users": users}, status=200)
+
+        elif action == "select_user_in_group":
+            pg = prof_group.objects.filter(
+                group__id=group_id
+            ).values_list('profile', flat=True)
+
+            profiles_not_in_group = profiles.objects.filter(
+                id__in=pg
+            ).order_by("-id")
+            users = []
+            for item in profiles_not_in_group:
+                if item.profile.user.is_superuser:
+                    continue
+                users.append({
+                    "user_id": item.user.id,
+                    "prof_id": item.id,
+                    "name": item.user.username,
+                })
+            return Response({"users": users}, status=200)
+        elif action == "add_user":
+            user_id = data.get("user_id")
+            pg = prof_group.objects.get_or_create(
+                group__id=group_id,
+                profile__user__id=user_id
+            )
+            # нужно потом запросить данные на тех кто есть в группе и тех кого нет
+            
+            #TODO
+            
+            
+            
+        elif action == "remove_user":
+            user_id = data.get("user_id")
+            pg = prof_group.objects.get(
+                group__id=group_id,
+                profile__user__id=user_id
+            )
+            
+            #TODO
+
+class Create(APIView):
+    pass
+
 class UserNotes(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request, user_id):
