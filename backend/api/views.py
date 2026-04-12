@@ -70,7 +70,7 @@ class AllUsers(APIView):
         query = data.get('query')
         
         if query:
-            users = User.objects.filter(username__icontains=query)
+            users = User.objects.filter(username__icontains=query).order_by('-id')
         else:
             return Response({"error": "Not found"}, status=404)
         serializer = UserSerializer(users, many=True)
@@ -162,7 +162,7 @@ class AllNotes(APIView):
                 })
             return Response({"data": response})
 
-class AllGroups(APIView):
+class Groups(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request):
         response = []
@@ -229,8 +229,9 @@ class AllGroups(APIView):
 class GroupInfo(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request, group_id):
-        pg = prof_group.objects.filter(group__id=group_id).order_by("-id")
-        ng = note_group.objects.filter(group__id=group_id).order_by("-id")
+        group = get_object_or_404(groups, id=group_id)
+        pg = prof_group.objects.filter(group=group).order_by("-id")
+        ng = note_group.objects.filter(group=group).order_by("-id")
         response=[]
         if not request.user.is_superuser:
             profile = profiles.objects.get(user=request.user)
@@ -385,12 +386,14 @@ class CreateGroup(APIView):
     def post(self, request):
         data = json.loads(request.body)
         name = data.get('name')
-        profiles_id = data.get('profiles_id')
+        users_id = data.get('users_id')
         group = groups.objects.create(
             name = name
         )
-        for profile_id in profiles_id:
-            prof = profiles.objects.get(id=profile_id)
+        for user_id in users_id:
+            prof = profiles.objects.get(user__id = user_id)
+            if prof.user.is_superuser:
+                continue
             prof_group.objects.create(
                 profile=prof,
                 group=group
@@ -426,11 +429,11 @@ class UserNotes(APIView):
     def post(self, request, user_id):
         data = json.loads(request.body)
         query = data.get('query')  
-        
+        profile = get_object_or_404(profiles, user__id=user_id)
         if query:
-            Allnotes = notes.objects.filter(profile__user__id=user_id, title__icontains=query).order_by("-id")
+            Allnotes = notes.objects.filter(profile=profile, title__icontains=query).order_by("-id")
         else:
-            Allnotes = notes.objects.filter(profile__user__id=user_id).order_by("-id")
+            Allnotes = notes.objects.filter(profile=profile).order_by("-id")
 
         response = []
         for note in Allnotes:
@@ -484,10 +487,10 @@ class Note(APIView):
     def post(self, request, note_id):
         profile = profiles.objects.get(user=request.user)
         if profile.user.is_superuser:
-            return Response({"error": "to edit notes can onli users"})
+            return Response({"error": "to edit notes can only users"})
         
         try:
-            note = notes.objects.get(id=note_id)
+            note= notes.objects.get(id=note_id)
         except notes.DoesNotExist:
             return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
         
@@ -542,6 +545,40 @@ class Note(APIView):
             "message": "Note deleted successfully"
         },  status=status.HTTP_204_NO_CONTENT)
     
+class CreateNote(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def post(self, request):
+        if request.user.is_superuser:
+            return Response({"error": "no permision"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            data = json.loads(request.body)
+        except:
+            return Response({"details": "missed json body"})
+
+        title = data.get('title')
+        description = data.get('description')
+        if not data and not title and not description:
+            return Response({"details": "missed params: data, title, description"})
+        profile = profiles.objects.get(user=request.user)
+        note = notes.objects.create(
+            profile=profile,
+            description=description,
+            title=title
+        )
+        accesseble_notes.objects.create(
+            profile=profile,
+            note=note
+        )
+        return Response({
+            "message": "Note added",
+            "note": {
+                "id": note.id,
+                "title": note.title,
+                "description": note.description,
+                "updated_at": note.updated_at
+            }
+        }, status=status.HTTP_200_OK)
+        
 class Statistics(APIView):
     permission_classes = (permissions.IsAdminUser,)
 
