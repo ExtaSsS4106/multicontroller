@@ -511,6 +511,10 @@ class Note(APIView):
             note.description = description
         note.save()
         
+        statistics.objects.update_or_create(
+            profile=profile,
+            action='update'
+        )
         return Response({
             "message": "Note updated",
             "note": {
@@ -525,15 +529,13 @@ class Note(APIView):
 
     def delete(self, request, note_id):
         profile = profiles.objects.get(user=request.user)
-        if profile.user.is_superuser:
-            return Response({"error": "only users can delete notes"}, status=status.HTTP_403_FORBIDDEN)
-        
+
         try:
             note = notes.objects.get(id=note_id)
         except notes.DoesNotExist:
             return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
                 
-        if note.profile != profile:
+        if note.profile != profile or request.user.is_superuser:
             an = accesseble_notes.objects.filter(note=note, profile=profile)
             if not an.exists():
                 return Response({
@@ -541,6 +543,10 @@ class Note(APIView):
                 }, status=status.HTTP_403_FORBIDDEN)
         
         note.delete()
+        statistics.objects.update_or_create(
+            profile=profile,
+            action='delete',
+        )
         return Response({
             "message": "Note deleted successfully"
         },  status=status.HTTP_204_NO_CONTENT)
@@ -568,6 +574,10 @@ class CreateNote(APIView):
         accesseble_notes.objects.create(
             profile=profile,
             note=note
+        )
+        statistics.objects.update_or_create(
+            profile=profile,
+            action='create',
         )
         return Response({
             "message": "Note added",
@@ -625,7 +635,8 @@ class ProfileContent(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request):
         try:
-            user_id = request.GET.get('user_id')
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
             user = User.objects.get(id=user_id)
         except:
             user = request.user
@@ -639,7 +650,7 @@ class ProfileContent(APIView):
             response.append({
                 "id": item.id,
                 "title": item.title,
-                "file_link": item.file_link,
+                "file_link":  str(item.file_link) if item.file_link else None,
                 "file_name": item.file_name,
                 "user_id": item.profile.user.id,
                 "created_at": item.created_at,
@@ -653,7 +664,7 @@ class ProfileContent(APIView):
         data = json.loads(request.body)
         type = data.get('type')
         try:
-            user_id = request.GET.get('user_id')
+            user_id = data.get('user_id')
             user = User.objects.get(id=user_id)
         except:
             user = request.user
@@ -675,7 +686,7 @@ class ProfileContent(APIView):
                 response.append({
                     "id": item.id,
                     "title": item.title,
-                    "file_link": item.file_link,
+                    "file_link":  str(item.file_link) if item.file_link else None,
                     "file_name": item.file_name,
                     "user_id": item.profile.user.id,
                     "created_at": item.created_at,
@@ -754,7 +765,9 @@ class ProfileContent(APIView):
             
             data = json.loads(request.body)
             group_id = data.get('group_id')
-            
+            if not group_id:
+                return Response({"error": "group_id required"}, status=403)
+
             # Получаем объекты
             group = groups.objects.get(id=group_id)
             profile = profiles.objects.get(user=user)
@@ -808,13 +821,29 @@ class Requests(APIView):
         data = json.loads(request.body)
         action = data.get('action')
         note_id = data.get('note_id')
-        note = notes.objects.get(id=note_id)
-        if action == "create" and not request.user.is_superuser:
-            requests.objects.create(
-                profile=profiles.objects.get(user=request.user),
-                note=note,
-                status="pending"
-            )
+        note = get_object_or_404(notes, id=note_id)
+        profile = profiles.objects.get(user=request.user)
+        an = accesseble_notes.objects.filter(profile=profile, note=note)
+        details = []
+        if an.exists():
+            return Response({"details": "you already have access for this note"})
+        if action == "pending" and not request.user.is_superuser:
+            profile_obj = profiles.objects.get(user=request.user)
+            
+            existing_request = requests.objects.filter(
+                profile=profile_obj, 
+                note=note
+            ).first() 
+            
+            if existing_request.status=="pending":
+                details.append({"error": "Request already exists"})
+            else:
+                req = requests.objects.create(
+                    profile=profile_obj,
+                    note=note,
+                    status="pending"
+                )
+                details.append({"request_id": req.id})
         elif action == "approved" and request.user.is_superuser:
             request_id = data.get('request_id')
             profile = profiles.objects.get(user__id=data.get('user_id'))
@@ -826,4 +855,4 @@ class Requests(APIView):
         elif action=="cancel":
             request_id = data.get('request_id')
             requests.objects.filter(id=request_id).update(status='rejected')
-        return Response({"status": action}, status=200)
+        return Response({"status": action, "details": details}, status=200)
