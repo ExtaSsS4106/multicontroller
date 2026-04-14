@@ -1,0 +1,29 @@
+{% extends "main/template.html" %}
+{% block h_title %}{% endblock h_title %}
+{% block content %}
+<div class="grey-container">
+    <div class="navigation">
+      <div class="n-left">
+        <div class="n-search">
+          <input class="search" type="text" placeholder="search...">
+          <button class="search-btn">
+            <span class="btn-icon">🔍</span>
+          </button>          
+        </div>
+          {% block n_left %}
+          
+          {% endblock n_left %}
+      </div>
+      <div class="n-right">
+        {% block n_right %}
+        
+        {% endblock n_right %} 
+      </div>
+    </div>
+    <div class="content">
+        {% block content_main %}
+        
+        {% endblock content_main %}    
+    </div>
+</div>
+{% endblock content %}

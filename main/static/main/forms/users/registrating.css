@@ -1,0 +1,38 @@
+.grey-container{
+    width: 600px;
+    gap: 10px;
+    padding-bottom: 30px;
+}
+.reg-buttons, .reg-fields, .reg-title{
+    min-height: 150px;
+    width: 80%;
+}
+.reg-title{
+    color: aliceblue;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+}
+.reg-fields{
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+}
+.entry{
+    height: 60px;
+}
+.reg-buttons{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}

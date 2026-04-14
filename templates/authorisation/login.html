@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login</title>
+  <link rel="stylesheet" href="{% static 'authorisation/login.css' %}">
+  <style>
+    .error-message {
+      color: red;
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #ffeeee;
+      border-radius: 5px;
+      text-align: center;
+      border-left: 4px solid red;
+    }
+  </style>
+</head>
+<body>
+  <form class="auth" method="post" action="/login/">
+    <div class="title">
+      <h3>Authorization</h3>
+    </div>
+    
+    <!-- Отображение ошибки из Django -->
+    {% if error %}
+      <div class="error-message">
+        ⚠️ {{ error }}
+      </div>
+    {% endif %}
+    
+    {% csrf_token %}
+    <div class="fields">
+      <input class="entry" name="username" type="text" placeholder="username" autofocus>
+      <input class="entry" name="password" type="password" placeholder="password">
+    </div>
+    <div class="button-submit">
+      <button type="submit" class="submit">sign in</button>
+    </div>
+  </form>
+</body>
+</html>

@@ -1,0 +1,123 @@
+.green-btn {
+  width: 139px;
+  height: 33px;
+  background: #005238;
+  border-radius: 18px;
+  border: none;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.green-btn:hover {
+  background: #007a4d;
+}
+
+.green-btn:active {
+  background: #005238;
+}
+
+.red-btn {
+  width: 139px;
+  height: 33px;
+  background: #62202B;
+  border-radius: 18px;
+  border: none;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.red-btn:hover {
+  background: #a8374a;
+}
+
+.red-btn:active {
+  background: #62202B;
+}
+
+
+.blue-btn {
+  padding: 0 20px;          /* Внутренние отступы слева и справа */
+  white-space: nowrap;      /* Запрещает перенос текста */
+  display: inline-block;    /* Или inline-flex */
+  
+  height: 33px;
+  background: #86C1CC;
+  border-radius: 18px;
+  border: none;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.blue-btn:hover {
+  background: #0D98A7;
+}
+
+.blue-btn:active {
+  background: #0D98A7;
+}
+
+.c-button, .l-button {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  width: 80%;
+  height: 38px;
+  border-radius: 11px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.c-button {
+  background: #EAE0D1;
+  text-align: left;
+  padding-left: 18px;
+}
+
+.c-button:hover {
+  background: #E5BD95;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+.c-button:active {
+  background: #CC986D;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+.l-button {
+  background: #62202B;
+  color: #FFFFFF;
+}
+
+.l-button:hover {
+  background: #9C3143;
+}
+
+.l-button:active {
+  background: #7A2535;
+}
+
+.logout-h {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}

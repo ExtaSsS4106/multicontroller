@@ -1,0 +1,159 @@
+body {
+  background-color: #DFD3C3;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+header {
+  box-sizing: border-box;
+  width: 100%;
+  height: 80px;
+  background: #596E79;
+  border-bottom: 2px solid #FFFFFF;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 0 30px;
+  flex-shrink: 0; /* Запрещаем сжатие header */
+}
+
+section {
+  box-sizing: border-box;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch; /* Изменено с center на stretch */
+  gap: 10px;
+  min-height: 0; /* Важно для прокрутки */
+  overflow: hidden; /* Скрываем переполнение */
+}
+
+
+.grey-container {
+  width: 100%;
+  height: 100%;
+  background: #798686;
+  border-radius: 30px 30px 0px 0px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 40px;
+  overflow: hidden;
+  min-height: 0;
+}
+.blue-container {
+  width: 100%;
+  height: 100%;
+  background: #456A75;
+  border-radius: 30px 30px 0px 0px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 40px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.navigation, .content {
+  width: 100%;
+}
+
+.navigation {
+  flex-grow: 0;
+  flex-shrink: 0;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+  height: 80px;
+  border-bottom: 1px solid #FDFDFD;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+
+
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 30px;
+  overflow-y: auto;
+  min-height: 0;
+  width: 90%;
+  padding-bottom: 20px;
+  padding-left: 20px;  /* Фиксированный отступ слева */
+  padding-right: 20px; /* Фиксированный отступ справа */
+}
+
+/* Кастомный скроллбар */
+.content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: #e0d8d0;
+  border-radius: 4px;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: #596E79;
+  border-radius: 4px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: #3d4f56;
+}
+
+
+
+.left-panel {
+  box-sizing: border-box;
+  width: 240px;
+  height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #C7B198;
+  border-right: 2px solid #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 25px 0;
+  flex-shrink: 0; /* Запрещаем сжатие левой панели */
+}
+
+.controls, .logout-h {
+  width: 100%;
+}
+
+.controls {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+}

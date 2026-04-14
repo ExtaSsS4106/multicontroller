@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin</title>
+<link rel="stylesheet" href="{% static 'components/containers.css' %}">
+<link rel="stylesheet" href="{% static 'components/cards.css' %}">
+<link rel="stylesheet" href="{% static 'components/buttons.css' %}">
+<link rel="stylesheet" href="{% static 'components/fields.css' %}">
+<link rel="stylesheet" href="{% static 'components/header-components.css' %}">
+<link rel="stylesheet" href="{% static 'components/main.css' %}">
+<link rel="stylesheet" href="{% static 'components/navigation-components.css' %}">
+  {% block style %}
+  
+  {% endblock style %}
+
+  
+</head>
+<body>
+  <header>
+  <div class="title-h">
+    <h2 style="cursor: pointer;" onclick="location.href='/'">AdminPanel</h2>
+  </div>
+  <div class="user-h">
+    <h4>{{username}}</h4>
+    <div class="circle">
+      U
+    </div>
+  </div>
+</header>
+<section>
+  <div class="left-panel">
+    <div class="controls">
+      <button onclick="location.href='/all_users/'" class="c-button">Users</button>
+      <button onclick="location.href='/users/'" class="c-button">Groups</button>
+      <button onclick="location.href='/users/'" class="c-button">Notes</button>
+      <button onclick="location.href='/users/'" class="c-button">Requests</button>
+    </div>
+    <div class="logout-h">
+      <button onclick="location.href='/logout/'" class="l-button">logout</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="main-header">
+      <h1>{% block h_title %}{% endblock h_title %}</h1>
+    </div>
+    <div class="main-section">
+        {% block content %}
+  
+        {% endblock content %}
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
