@@ -51,6 +51,11 @@ class accesseble_notes(models.Model):
     id = models.AutoField(primary_key=True)
     profile = models.ForeignKey(profiles, on_delete=models.CASCADE)
     note = models.ForeignKey(notes, on_delete=models.CASCADE)
+    
+class group_an(models.Model):
+    id = models.AutoField(primary_key=True)
+    group = models.ForeignKey(groups, on_delete=models.CASCADE)
+    accesseble_notes = models.ForeignKey(accesseble_notes, on_delete=models.CASCADE)
 
 class note_group(models.Model):
     id = models.AutoField(primary_key=True)

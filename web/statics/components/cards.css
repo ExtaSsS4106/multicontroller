@@ -1,0 +1,103 @@
+.card {
+  width: 100%;  /* Теперь 100% от ширины .content с учетом padding */
+  height: 100px;
+  background: #E6E1DF;
+  border-radius: 13px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box; /* Важно! Учитываем padding в ширине */
+}
+.c-info{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+.c-text, .c-end{
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2px;
+  
+}
+.c-text * {
+  margin: 0;
+  padding: 0;
+}
+.c-circle{
+  /* Rectangle 29 */
+
+  width: 67px;
+  height: 67px;
+
+  background: #CFB9B2;
+  color: white;
+  font-size: 40px;
+  font-weight: 900;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 40px;
+}
+.card:hover {
+  background: #d5cec8;
+}
+
+.c-btn {
+  width: 50px;
+  height: 50px;
+  
+  /* Делаем фон и рамку невидимыми */
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  
+  /* Убираем стандартные эффекты */
+  outline: none;
+  box-shadow: none;
+  
+  /* Содержимое остаётся видимым */
+  color: inherit;
+  font-size: inherit;
+  
+  /* Плавные переходы (опционально) */
+  transition: all 0.2s ease;
+  
+  /* Центрируем содержимое */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Убираем эффекты фона при наведении */
+.c-btn:hover {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Убираем эффекты при нажатии */
+.c-btn:active {
+  background: transparent;
+  transform: scale(0.95); /* Лёгкая анимация при клике (опционально) */
+}
+
+/* Убираем рамку фокуса */
+.c-btn:focus {
+  outline: none;
+  box-shadow: none;
+}

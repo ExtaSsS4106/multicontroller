@@ -4,7 +4,7 @@ from django.urls import path
 from .views import (
     RegisterView, ProfileView, LogoutView,
     AllUsers, AllNotes, Groups, GroupInfo, CreateGroup,
-    UserNotes, Note, Statistics, ProfileContent, Requests, CreateNote
+    UserNotes, Note, Statistics, ProfileContent, Requests, CreateNote, Adding_to_groups, for_addingGroupInfo
 )
 
 urlpatterns = [
@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/groups/', Groups.as_view(), name='groups'),
     
     path('api/group-info/<int:group_id>/', GroupInfo.as_view(), name='group-info'),
+    path('api/group-info-for-adding/<int:group_id>/', for_addingGroupInfo.as_view(), name='group-info-for-adding'),
     
     path('api/create-group/', CreateGroup.as_view(), name='create-group'),
 
@@ -36,4 +37,7 @@ urlpatterns = [
     path('api/create-note/', CreateNote.as_view(), name='create-note'),
 
     path('api/requests/', Requests.as_view(), name='requests'),
+    
+    path('api/adding/<int:prof_id>/', Adding_to_groups.as_view(), name='adding'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

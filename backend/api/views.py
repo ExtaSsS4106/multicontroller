@@ -61,20 +61,32 @@ class LogoutView(APIView):
 class AllUsers(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request):
-        users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
+        profiles_ = profiles.objects.all().order_by('-id')
+        response = []
+        for p in profiles_:
+            response.append({
+                                "profile_id": p.id,
+                                "username": p.user.username,
+                                "user_id": p.user.id,
+                            })
+        return Response(response)
     
     def post(self, request):
         data = json.loads(request.body)
         query = data.get('query')
         
         if query:
-            users = User.objects.filter(username__icontains=query).order_by('-id')
+            profiles_ = profiles.objects.filter(user__username__icontains=query).order_by('-id')
         else:
             return Response({"error": "Not found"}, status=404)
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
+        response = []
+        for p in profiles_:
+            response.append({
+                                "profile_id": p.id,
+                                "username": p.user.username,
+                                "user_id": p.user.id,
+                            })
+        return Response(response)
     
 class AllNotes(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -97,13 +109,13 @@ class AllNotes(APIView):
                 response.append({
                     "id": note.id,
                     "title": note.title,
-                    "file_link": note.file_link,
+                    "file_link": str(note.file_link) if note.file_link else None,
                     "file_name": note.file_name,
                     "user_id": note.profile.user.id,
                     "access": access,
                     "status": status_val,
                     "created_at": note.created_at,
-                    "updated_at": note.updated_at,
+                    "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
                 })
             return Response({"data": response})
         else: 
@@ -111,11 +123,11 @@ class AllNotes(APIView):
                 response.append({
                     "id": note.id,
                     "title": note.title,
-                    "file_link": note.file_link,
+                    "file_link": str(note.file_link) if note.file_link else None,
                     "file_name": note.file_name,
                     "user_id": note.profile.user.id,
                     "created_at": note.created_at,
-                    "updated_at": note.updated_at,
+                    "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
                 })
             return Response({"data": response})
         
@@ -140,13 +152,13 @@ class AllNotes(APIView):
                 response.append({
                     "id": note.id,
                     "title": note.title,
-                    "file_link": note.file_link,
+                    "file_link": str(note.file_link) if note.file_link else None,
                     "file_name": note.file_name,
                     "user_id": note.profile.user.id,
                     "access": access,
                     "status": status_val,
                     "created_at": note.created_at,
-                    "updated_at": note.updated_at,
+                    "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
                 })
             return Response({"data": response})
         else: 
@@ -154,11 +166,11 @@ class AllNotes(APIView):
                 response.append({
                     "id": note.id,
                     "title": note.title,
-                    "file_link": note.file_link,
+                    "file_link": str(note.file_link) if note.file_link else None,
                     "file_name": note.file_name,
                     "user_id": note.profile.user.id,
                     "created_at": note.created_at,
-                    "updated_at": note.updated_at,
+                    "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
                 })
             return Response({"data": response})
 
@@ -167,9 +179,9 @@ class Groups(APIView):
     def get(self, request):
         response = []
         if not request.user.is_superuser:
-            Allgroups = prof_group.objects.filter(profile__user=request.user).order_by("-id")
-            for pg in Allgroups:
-                group = pg.group
+            pg = prof_group.objects.filter(profile__user=request.user).order_by("-id")
+            groups_ = groups.objects.filter(id=pg.group.id).order_by("-id")
+            for group in groups_:
                 response.append({
                     "id": group.id,
                     "name": group.name,
@@ -178,9 +190,8 @@ class Groups(APIView):
                 })
             return Response({"data": response})
         else: 
-            Allgroups = prof_group.objects.all().order_by("-id")
-            for pg in Allgroups:
-                group = pg.group
+            groups_ = groups.objects.filter().order_by("-id")
+            for group in groups_:
                 response.append({
                     "id": group.id,
                     "name": group.name,
@@ -225,14 +236,76 @@ class Groups(APIView):
         group = get_object_or_404(groups, id=group_id)
         group.delete()
         return Response({"status": "group deleted"}, status=200)
-
+    
+class for_addingGroupInfo(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self, request, group_id):
+        group = get_object_or_404(groups, id=group_id)
+        pg = prof_group.objects.filter(group=group).order_by("-id")
+        ng = note_group.objects.filter(group=group).order_by("-id")
+        profile_ids = pg.values_list('profile_id', flat=True)  
+        profiles_ = profiles.objects.exclude(id__in=profile_ids).order_by("-id")
+        response=[]
+        if not request.user.is_superuser:
+            profile = profiles.objects.get(user=request.user)
+            if pg.filter(profile=profile).exists():
+                users = []
+                notes = []
+                for item in profiles_:
+                    if item.profile.user.is_superuser:
+                        continue
+                    users.append({
+                        "user_id": item.user.id,
+                        "prof_id": item.id,
+                        "name": item.user.username,
+                    })
+                for item in ng:
+                    notes.append({
+                        "id": item.note.id,
+                        "title": item.note.title,
+                        "file_name": item.note.file_name,
+                        "updated_at": item.note.updated_at.strftime("%d.%m.%Y %H:%M"),
+                    })
+                response= {
+                    "users":users,
+                    "notes":notes,
+                    "group_title":group.name,
+                    "group_id":group.id,
+                }
+                return Response({"data": response}, status=200)
+            else:
+                return Response({"error": "no permision"}, status=403)
+        else:
+            users = []
+            notes = []
+            for item in profiles_:
+                if item.user.is_superuser:
+                    continue
+                users.append({
+                    "user_id": item.user.id,
+                    "prof_id": item.id,
+                    "name": item.user.username,
+                })
+            for item in ng:
+                notes.append({
+                    "id": item.note.id,
+                    "title": item.note.title,
+                    "file_name": item.note.file_name,
+                    "updated_at": item.note.updated_at.strftime("%d.%m.%Y %H:%M"),
+                })
+            response= {
+                    "users":users,
+                    "notes":notes,
+                    "group_title":group.name,
+                    "group_id":group.id,
+                }
+            return Response({"data": response}, status=200)
 class GroupInfo(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request, group_id):
         group = get_object_or_404(groups, id=group_id)
         pg = prof_group.objects.filter(group=group).order_by("-id")
         ng = note_group.objects.filter(group=group).order_by("-id")
-        response=[]
         if not request.user.is_superuser:
             profile = profiles.objects.get(user=request.user)
             if pg.filter(profile=profile).exists():
@@ -251,12 +324,15 @@ class GroupInfo(APIView):
                         "id": item.note.id,
                         "title": item.note.title,
                         "file_name": item.note.file_name,
-                        "updated_at": item.note.updated_at
+                        "updated_at": item.note.updated_at.strftime("%d.%m.%Y %H:%M"),
                     })
-                response.append({
-                    "user":users,
-                    "notes":notes
-                })
+                response= {
+                    "users":users,
+                    "notes":notes,
+                    "group_title":group.name,
+                    "group_id":group.id,
+
+                }
                 return Response({"data": response}, status=200)
             else:
                 return Response({"error": "no permision"}, status=403)
@@ -276,25 +352,44 @@ class GroupInfo(APIView):
                     "id": item.note.id,
                     "title": item.note.title,
                     "file_name": item.note.file_name,
-                    "updated_at": item.note.updated_at
+                    "updated_at": item.note.updated_at.strftime("%d.%m.%Y %H:%M"),
                 })
-            response.append({
-                "user":users,
-                "notes":notes
-            })
+            response= {
+                    "users":users,
+                    "notes":notes,
+                    "group_title":group.name,
+                    "group_id":group.id,
+                }
             return Response({"data": response}, status=200)
         
     def post(self, request, group_id):
         data = json.loads(request.body)
-        query = data.get('query', '')
+        notes_query = data.get('notes_query', '')
+        users_query = data.get('users_query', '')
+
         action = data.get('action', '')
         group = groups.objects.get(id=group_id)
 
         if action == "search":
-            ng = note_group.objects.filter(group__id=group_id, note__title__icontains=query).order_by("-id")
+            if notes_query != '':
+                ng = note_group.objects.filter(group__id=group_id, note__title__icontains=notes_query).order_by("-id")
+            else:
+                ng = note_group.objects.filter(group__id=group_id).order_by("-id")
 
-            response=[]
-            notes = []
+            if users_query !='':
+                pg = prof_group.objects.filter(group__id=group_id, profile__user__username__icontains=users_query).order_by("-id")
+            else:
+                pg = prof_group.objects.filter(group__id=group_id).order_by("-id")
+            notes_ = []
+            users= []
+            for item in pg:
+                    if item.profile.user.is_superuser:
+                        continue
+                    users.append({
+                        "user_id": item.profile.user.id,
+                        "prof_id": item.profile.id,
+                        "name": item.profile.user.username,
+                    })
             for item in ng:
                 notes.append({
                     "id": item.note.id,
@@ -302,9 +397,12 @@ class GroupInfo(APIView):
                     "file_name": item.note.file_name,
                     "updated_at": item.note.updated_at
                 })
-            response.append({
-                "notes":notes
-            })
+            response = {
+                "notes":notes_,
+                "users": users,
+                "notes_query": notes_query,
+                "users_query": users_query
+            }
             return Response({"data": response}, status=200)
         elif action == "select_add_user":
             pg = prof_group.objects.filter(
@@ -346,42 +444,64 @@ class GroupInfo(APIView):
         elif action == "add_user":
             user_id = data.get("user_id")
             profile = profiles.objects.get(user__id=user_id)
-
+            notes_ = notes.objects.filter(profile=profile)
+            for note in notes_:
+                ng, __ = note_group.objects.get_or_create(
+                    group=group,
+                    note=note
+                )
             pg, __ = prof_group.objects.get_or_create(
                 group=group,
                 profile=profile
             )
-            # нужно потом запросить данные на тех кто есть в группе и тех кого нет
             return Response({"status": "added"}, status=200)
 
         elif action == "remove_user":
             user_id = data.get("user_id")
-            pg = prof_group.objects.get(
-                group__id=group_id,
-                profile__user__id=user_id
-            )
-            pg.delete()
-            return Response({"status": "deleted"}, status=200)
-
+            
+            try:
+                # Получаем профиль пользователя
+                profile = profiles.objects.get(user__id=user_id)
+                
+                # Удаляем все связи note_group для этого пользователя в группе
+                notes_ = notes.objects.filter(profile=profile)
+                note_group.objects.filter(
+                    group=group,
+                    note__in=notes_
+                ).delete()
+                
+                # Удаляем связь prof_group
+                deleted_count, _ = prof_group.objects.filter(
+                    group=group,
+                    profile=profile
+                ).delete()
+                
+                if deleted_count == 0:
+                    return Response({"error": "User not in this group"}, status=404)
+                
+                return Response({"status": "deleted"}, status=200)
+                
+            except profiles.DoesNotExist:
+                return Response({"error": "Profile not found"}, status=404)
+            except Exception as e:
+                return Response({"error": str(e)}, status=400)
+        #TODO
 
 class CreateGroup(APIView):
     permission_classes = (permissions.IsAdminUser,)
     def get(self, request):
         profiles_ = profiles.objects.all().order_by("-id")
-        users = []
         response = []
         for profile in profiles_:
             if profile.user.is_superuser:
                 continue
-            users.append({
+            response.append({
                 "user_id": profile.user.id,
                 "prof_id": profile.id,
                 "name": profile.user.username,
             })
 
-        response.append({
-            "users":users,
-        })
+        
         return Response({"data": response}, status=200)
     def post(self, request):
         data = json.loads(request.body)
@@ -404,7 +524,7 @@ class CreateGroup(APIView):
                     note=note,
                     group=group
                 )
-        return Response({"status": "created"}, status=200)
+        return Response({"group_id": group.id}, status=200)
         
 class UserNotes(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -412,19 +532,19 @@ class UserNotes(APIView):
 
         
         Allnotes = notes.objects.filter(profile__user__id=user_id).order_by("-id")
-
+        prof = profiles.objects.get(user__id=user_id)
         response = []
         for note in Allnotes:
             response.append({
                 "id": note.id,
+                "username": note.profile.user.username,
                 "title": note.title,
-                "file_link": note.file_link,
                 "file_name": note.file_name,
                 "user_id": note.profile.user.id,
-                "created_at": note.created_at,
-                "updated_at": note.updated_at,
+                "created_at": note.created_at.strftime("%d.%m.%Y %H:%M"),
+                "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
             })
-        return Response({"data": response})
+        return Response({"data": response, "prof_id": prof.id})
     
     def post(self, request, user_id):
         data = json.loads(request.body)
@@ -439,14 +559,14 @@ class UserNotes(APIView):
         for note in Allnotes:
             response.append({
                 "id": note.id,
+                "username": note.profile.user.username,
                 "title": note.title,
-                "file_link": note.file_link,
                 "file_name": note.file_name,
                 "user_id": note.profile.user.id,
-                "created_at": note.created_at,
-                "updated_at": note.updated_at,
+                "created_at": note.created_at.strftime("%d.%m.%Y %H:%M"),
+                "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
             })
-        return Response({"data": response})
+        return Response({"data": response, "username": profile.user.username,})
 
 class Note(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -455,29 +575,33 @@ class Note(APIView):
         note = get_object_or_404(notes,id=note_id)
         if profile.user.is_superuser:
             return Response({
-                "data": {
+                    
                     "id": note.id,
                     "title": note.title,
-                    "file_link": note.file_link,
+                    "file_link": str(note.file_link) if note.file_link else None,
                     "file_name": note.file_name,
                     "user_id": note.profile.user.id,
-                    "created_at": note.created_at,
-                    "updated_at": note.updated_at,
-                    }
+                    "description": note.description,
+                    "username": note.profile.user.username,
+                    "created_at": note.created_at.strftime("%d.%m.%Y %H:%M"),
+                    "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
+                    
             })
         else:
             an = accesseble_notes.objects.filter(note=note,profile=profile)
             if an.exists():
                 return Response({
-                    "data": {
+                        
                         "id": note.id,
                         "title": note.title,
                         "file_link": note.file_link,
                         "file_name": note.file_name,
                         "user_id": note.profile.user.id,
-                        "created_at": note.created_at,
-                        "updated_at": note.updated_at,
-                        }
+                        "description": note.description,
+                        "username": note.profile.user.username,
+                        "created_at": note.created_at.strftime("%d.%m.%Y %H:%M"),
+                        "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
+                        
                 })
             else:
                 return Response({
@@ -634,13 +758,9 @@ class Statistics(APIView):
 class ProfileContent(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request):
-        try:
-            data = json.loads(request.body)
-            user_id = data.get('user_id')
-            user = User.objects.get(id=user_id)
-        except:
-            user = request.user
-            
+
+        user = request.user
+        profile_ = profiles.objects.get(user=user)
         if user.is_superuser:
                 return Response({"error": "user reqired"}, status=403)
 
@@ -672,6 +792,27 @@ class ProfileContent(APIView):
         if user.is_superuser:
             return Response({"error": "user reqired"}, status=403)
         
+        if type == "profile":
+            user_id = data.get('user_id')
+            user = User.objects.get(id=user_id)
+            profile_ = profiles.objects.get(user=user)
+            if user.is_superuser:
+                    return Response({"error": "user reqired"}, status=403)
+
+            usr_notes = notes.objects.filter(profile__user=user).order_by("-id")
+            response = []
+            for item in usr_notes:
+                response.append({
+                    "id": item.id,
+                    "title": item.title,
+                    "file_link":  str(item.file_link) if item.file_link else None,
+                    "file_name": item.file_name,
+                    "user_id": item.profile.user.id,
+                    "created_at": item.created_at.strftime("%d.%m.%Y %H:%M"),
+                    "updated_at": item.updated_at.strftime("%d.%m.%Y %H:%M"),
+                })
+                
+            return Response({"data": response})
         if type == "server":
             data = json.loads(request.body)
             query = data.get('query', '')  
@@ -689,8 +830,8 @@ class ProfileContent(APIView):
                     "file_link":  str(item.file_link) if item.file_link else None,
                     "file_name": item.file_name,
                     "user_id": item.profile.user.id,
-                    "created_at": item.created_at,
-                    "updated_at": item.updated_at,
+                    "created_at": item.created_at.strftime("%d.%m.%Y %H:%M"),
+                    "updated_at": item.updated_at.strftime("%d.%m.%Y %H:%M"),
                 })
                 
             return Response({"data": response})
@@ -708,35 +849,52 @@ class ProfileContent(APIView):
                 response.append({
                     "id": item.group.id,
                     "name": item.group.name,
-                    "created_at": item.group.created_at,
-                    "updated_at": item.group.updated_at,
+                    "created_at": item.group.created_at.strftime("%d.%m.%Y %H:%M"),
+                    "updated_at": item.group.updated_at.strftime("%d.%m.%Y %H:%M"),
                 })
                 
             return Response({"data": response})
         
-        if type == "adding_to_groups":
-            if not request.user.is_superuser:
-                return Response({"error": "only admins"}, status=403)
-            
-            all_groups = groups.objects.all()
-            
-            user_group_ids = prof_group.objects.filter(
-                profile__user=user
-            ).values_list('group', flat=True)
-            
-            user_group_ids_set = set(user_group_ids)
-            
-            response = []
-            for group in all_groups:
-                response.append({
-                    "id": group.id,
-                    "name": group.name,
-                    "in_group": group.id in user_group_ids_set,  
-                    "created_at": group.created_at,
-                    "updated_at": group.updated_at,
-                })
-            return Response({"data": response})
+
         
+        # доделать запрос локальных
+
+        if type == "local":
+            pass
+            #TODO
+           
+class Adding_to_groups(APIView):
+    def get(self, request, prof_id):
+        prof = get_object_or_404(profiles, id=prof_id)
+        if not request.user.is_superuser:
+            return Response({"error": "only admins"}, status=403)
+        
+        all_groups = groups.objects.all()
+        
+        user_group_ids = prof_group.objects.filter(
+            profile=prof
+        ).values_list('group', flat=True)
+        
+        user_group_ids_set = set(user_group_ids)
+        
+        response = []
+        for group in all_groups:
+            response.append({
+                "id": group.id,
+                "name": group.name,
+                "in_group": group.id in user_group_ids_set,  
+                "created_at": group.created_at,
+                "updated_at": group.updated_at,
+            })
+        return Response({"data": response, "prof_id": prof.id, "username": prof.user.username,})
+    
+    def post(self, request, prof_id): 
+        
+        profile = get_object_or_404(profiles, id=prof_id)
+        if profile.user.is_superuser:
+            return Response({"error": "admin cant be in groups"}, status=403)
+        data = json.loads(request.body)
+        type = data.get('type')
         if type == "add_to_groups":
             if not request.user.is_superuser:
                 return Response({"error": "only admins"}, status=403)
@@ -746,7 +904,6 @@ class ProfileContent(APIView):
             
             # Получаем объекты
             group = groups.objects.get(id=group_id)
-            profile = profiles.objects.get(user=user)
             
             # Создаем связь
             prof_group_obj, created = prof_group.objects.get_or_create(
@@ -767,10 +924,8 @@ class ProfileContent(APIView):
             group_id = data.get('group_id')
             if not group_id:
                 return Response({"error": "group_id required"}, status=403)
-
             # Получаем объекты
             group = groups.objects.get(id=group_id)
-            profile = profiles.objects.get(user=user)
             
             # Создаем связь
             user_groups = prof_group.objects.filter(
@@ -779,16 +934,10 @@ class ProfileContent(APIView):
             )
             if not user_groups.exists():
                 return Response({"error": "not exists"})
-
             user_groups.delete()
-            return Response({"status": "deleted"})
+            return Response({"status": "deleted"})   
         
-        # доделать запрос локальных
-
-        if type == "local":
-            pass
-            #TODO
-            
+    
 class Requests(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self, request):
@@ -796,38 +945,49 @@ class Requests(APIView):
         if request.user.is_superuser:
             all_req_list = requests.objects.all().order_by("-id")
             for req_item in all_req_list:
+                if req_item.status == 'rejected':
+                    continue
                 response.append({
                     "id": req_item.id,
                     "user_id": req_item.profile.user.id,
+                    "username": req_item.profile.user.username,
                     "note_id": req_item.note.id,
-                    "created_at": req_item.created_at,
-                    "updated_at": req_item.updated_at,
+                    "note_title": req_item.note.title,
+                    "created_at": req_item.created_at.strftime("%d.%m.%Y %H:%M"),
+                    "updated_at": req_item.updated_at.strftime("%d.%m.%Y %H:%M"),
                     "status": req_item.status
                 })
         else:
             profile = profiles.objects.get(user=request.user)
             all_req_list = requests.objects.filter(profile=profile)
             for req_item in all_req_list:
+                if req_item.status == 'rejected':
+                    continue
                 response.append({
                     "id": req_item.id,
                     "user_id": req_item.profile.user.id,
+                    "username": req_item.profile.user.username,
                     "note_id": req_item.note.id,
-                    "created_at": req_item.created_at,
-                    "updated_at": req_item.updated_at,
+                    "note_title": req_item.note.title,
+                    "created_at": req_item.created_at.strftime("%d.%m.%Y %H:%M"),
+                    "updated_at": req_item.updated_at.strftime("%d.%m.%Y %H:%M"),
                     "status": req_item.status
                 })
         return Response({"data": response}, status=200)
     def post(self, request):
         data = json.loads(request.body)
         action = data.get('action')
-        note_id = data.get('note_id')
-        note = get_object_or_404(notes, id=note_id)
+        
         profile = profiles.objects.get(user=request.user)
-        an = accesseble_notes.objects.filter(profile=profile, note=note)
         details = []
-        if an.exists():
-            return Response({"details": "you already have access for this note"})
+        
         if action == "pending" and not request.user.is_superuser:
+            note_id = data.get('note_id')
+            note = get_object_or_404(notes, id=note_id)
+            an = accesseble_notes.objects.filter(profile=profile, note=note)
+            
+            if an.exists():
+                return Response({"details": "you already have access for this note"})
             profile_obj = profiles.objects.get(user=request.user)
             
             existing_request = requests.objects.filter(
@@ -847,10 +1007,11 @@ class Requests(APIView):
         elif action == "approved" and request.user.is_superuser:
             request_id = data.get('request_id')
             profile = profiles.objects.get(user__id=data.get('user_id'))
-            accesseble_notes.objects.get_or_create(
+            an, created = accesseble_notes.objects.get_or_create(
                 profile=profile,
                 note=note
             )
+
             requests.objects.filter(id=request_id).update(status='approved')
         elif action=="cancel":
             request_id = data.get('request_id')

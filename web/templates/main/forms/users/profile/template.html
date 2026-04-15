@@ -1,0 +1,22 @@
+{% extends "main/template.html" %}
+{% block content %}
+<div class="m-s-content">
+    <div class="m-s-c-navigation">
+      <div class="m-s-c-n-left">
+        {% block m_s_c_n_left %}
+        
+        {% endblock m_s_c_n_left %}
+      </div>
+      <div class="m-s-c-n-right">
+        {% block m_s_c_n_right %}
+        
+        {% endblock m_s_c_n_right %} 
+      </div>
+    </div>
+    <div class="m-s-c-content">
+        {% block m_s_c_content %}
+        
+        {% endblock m_s_c_content %}    
+    </div>
+</div>
+{% endblock content %}
