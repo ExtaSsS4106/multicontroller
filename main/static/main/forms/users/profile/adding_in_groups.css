@@ -1,0 +1,67 @@
+.grey-container{
+    width: 600px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    
+}
+
+.g-c-title{
+    color: aliceblue;
+    height: 100px;
+width: 85%;
+display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+.g-c-content {
+    width: 90%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    
+    /* Добавляем прокрутку */
+    overflow-y: auto;
+    overflow-x: hidden;
+    
+    /* Важно для правильной работы flex + прокрутки */
+    min-height: 0;
+    
+    /* Скрываем прокрутку для красоты (опционально) */
+    scrollbar-width: thin; /* Для Firefox */
+}
+
+/* Кастомный скроллбар для WebKit браузеров (Chrome, Safari, Edge) */
+.g-c-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.g-c-content::-webkit-scrollbar-track {
+    background: #e0d8d0;
+    border-radius: 4px;
+}
+
+.g-c-content::-webkit-scrollbar-thumb {
+    background: #596E79;
+    border-radius: 4px;
+}
+
+.g-c-content::-webkit-scrollbar-thumb:hover {
+    background: #3d4f56;
+}
+
+/* Чтобы внутренние элементы не выходили за края */
+.g-c-content > * {
+    max-width: 100%;
+    flex-shrink: 0; /* Элементы не сжимаются */
+}

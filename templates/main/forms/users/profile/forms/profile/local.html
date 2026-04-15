@@ -1,21 +1,8 @@
-{% extends "main/forms/template.html" %}
-{% load static %}
-{% block h_title %}Notes{% endblock h_title %}
-{% block style %}
-<script src="{% static 'main/forms/notes/scripts/all_notes.js' %}"></script>
-{% endblock style %}
-{% block n_right %}
-
-{% endblock n_right %} 
-
-
-
-{% block content_main %}
-    {% if data %}
+    {% if data.data %}
         {% for d in data.data %}
             <div 
             onclick="location.href='/note/{{d.id}}'"
-            data-profile_id={{d.profile_id}} 
+            data-id={{d.id}} 
             data-user_id={{d.user_id}} 
             class="card">
                 <div class="c-info">
@@ -26,13 +13,12 @@
                 </div>
                 <div class="c-end">
                     <button class="c-btn">
+                    
                     </button>
-                        <h6>{{d.updated_at}}</h6>
-
+                    <h6>{{d.updated_at}}</h6>
                 </div>
             </div>
         {% endfor %}
     {% else %}
-        <h1>No users</h1>
+        <h1>No local yeat</h1>
     {% endif %}
-{% endblock content_main %}    

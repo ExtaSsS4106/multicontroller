@@ -1,0 +1,196 @@
+{% extends "main/template.html" %}
+{% load static %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'main/forms/groups/create_new_groupe.css' %}">
+
+{% endblock style %}
+{% block h_title %}New group{% endblock h_title %}
+{% block content %}
+<div class="grey-container">
+    <div class="g-c-title">
+        <h2>All users</h2>
+    </div>
+    <div class="g-c-content">
+    {% if data %}
+        {% for d in data.data %}
+            <div 
+                data-prof_id="{{ d.prof_id }}" 
+                data-user_id="{{ d.user_id }}" 
+                class="card">
+                <div class="c-info">
+                    <div class="c-circle">{{ d.name|make_list|first }}</div>
+                    <div class="c-text">
+                        <h2>{{ d.name }}</h2>
+                        <h6>{{ d.email|default:"" }}</h6>
+                    </div>
+                </div>
+                <div class="c-end">
+                    <button class="c-btn">
+                        ➕
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <h1>No users</h1>
+    {% endif %}
+    </div>
+</div>
+<div class="grey-container">
+    <div class="g-c-title">
+        <h2>In groups</h2>
+    </div>
+    <div class="g-c-content">
+        <input class="entry" required placeholder="Tile"/>
+        <div class="users-in">
+
+        </div>
+        <div class="s-btns">
+            <button class="red-btn">
+                <span class="btn-icon">cancel</span>
+            </button>  
+            <button class="green-btn">
+                <span class="btn-icon">Create</span>
+            </button>  
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block scritp %}
+<script>
+    let selectedUsers = [];
+
+    function updateSelectedUsers() {
+        const usersInContainer = document.querySelector('.users-in');
+        usersInContainer.innerHTML = '';
+        
+        if (selectedUsers.length === 0) {
+            usersInContainer.innerHTML = '<div class="empty-message">No users selected</div>';
+        } else {
+            selectedUsers.forEach(user => {
+                const userElement = document.createElement('div');
+                userElement.className = 'selected-user';
+                userElement.dataset.userId = user.user_id;
+                userElement.dataset.profId = user.prof_id;
+                userElement.innerHTML = `
+                    <div class="selected-user-info">
+                        <div class="selected-user-circle">${user.name.charAt(0)}</div>
+                        <span class="selected-user-name">${user.name}</span>
+                    </div>
+                    <button class="remove-user-btn" onclick="removeUser('${user.user_id}')">✕</button>
+                `;
+                usersInContainer.appendChild(userElement);
+            });
+        }
+    }
+
+    window.removeUser = function(userId) {
+        const user = selectedUsers.find(u => u.user_id === userId);
+        if (user) {
+            selectedUsers = selectedUsers.filter(u => u.user_id !== userId);
+            updateSelectedUsers();
+            
+            // Показываем карточку обратно в левой колонке
+            const card = document.querySelector(`.card[data-user_id="${userId}"]`);
+            if (card) {
+                card.style.display = 'flex';
+            }
+        }
+    }
+
+    // Обработка клика по карточке
+    document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Проверяем, что клик не по кнопке
+            if (e.target.classList.contains('c-btn') || e.target.closest('.c-btn')) {
+                return;
+            }
+            
+            const userId = this.dataset.user_id;
+            const profId = this.dataset.prof_id;
+            const userName = this.querySelector('.c-text h2').innerText;
+            
+            // Проверяем, не выбран ли уже пользователь
+            if (selectedUsers.some(u => u.user_id === userId)) {
+                return;
+            }
+            
+            // Добавляем пользователя
+            selectedUsers.push({
+                user_id: userId,
+                prof_id: profId,
+                name: userName
+            });
+            
+            // Скрываем карточку
+            this.style.display = 'none';
+            
+            // Обновляем отображение
+            updateSelectedUsers();
+        });
+    });
+
+    // Создание группы
+    document.querySelector('.green-btn').addEventListener('click', function() {
+        const groupName = document.querySelector('.entry').value;
+        
+        if (!groupName.trim()) {
+            alert('Please enter group name');
+            return;
+        }
+        
+        if (selectedUsers.length === 0) {
+            alert('Please select at least one user');
+            return;
+        }
+        
+        const usersId = selectedUsers.map(user => parseInt(user.user_id));
+        
+        fetch('/create_group/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                name: groupName,
+                users_id: usersId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.group_id) {
+                alert('Group created successfully!');
+                window.location.href = '/groups/';
+            } else if (data.error) {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            window.location.href = "/groups/"
+        });
+    });
+
+    // Отмена
+    document.querySelector('.red-btn').addEventListener('click', function() {
+        window.location.href = '/groups/';
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock scritp %}

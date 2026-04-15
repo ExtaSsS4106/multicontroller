@@ -1,23 +1,26 @@
-{% extends "main/forms/users/profile/template.html" %}
+{% extends "main/forms/template.html" %}
 {% block h_title %}{{username}}{% endblock h_title %}
+{% load static %}
 
-
+{% block style %}
+<script src="{% static 'main/forms/users/profile/forms/scripts/profiles.js' %}"></script>
+{% endblock style %}
 
 {% block n_left %}
-<button class="blue-btn">
-  <span class="btn-icon">on server</span>
+<button  onclick="updateUsersList('server',{{data.prof_id}});" class="blue-btn">
+  <span class="btn-icon">server</span>
 </button> 
 <button class="blue-btn">
   <span class="btn-icon">local</span>
 </button> 
-<button class="blue-btn">
+<button onclick="updateUsersList('groups',{{data.prof_id}});" class="blue-btn">
   <span class="btn-icon">groups</span>
 </button> 
 {% endblock n_left %}
 
 {% block n_right %}
 <button class="green-btn">
-  <span class="btn-icon">Add in group +</span>
+  <span onclick="location.href='/adding/{{data.prof_id}}'" class="btn-icon">Add in group +</span>
 </button>  
 {% endblock n_right %} 
 

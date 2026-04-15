@@ -5,7 +5,7 @@
     <div class="navigation">
       <div class="n-left">
         <div class="n-search">
-          <input class="search" type="text" placeholder="search...">
+          <input id="query" class="search" type="text" placeholder="search...">
           <button class="search-btn">
             <span class="btn-icon">🔍</span>
           </button>          
@@ -20,7 +20,7 @@
         {% endblock n_right %} 
       </div>
     </div>
-    <div class="content">
+    <div id="content-container" class="content">
         {% block content_main %}
         
         {% endblock content_main %}    

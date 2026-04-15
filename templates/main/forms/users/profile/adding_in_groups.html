@@ -1,0 +1,131 @@
+{% extends "main/template.html" %}
+{% load static %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'main/forms/users/profile/adding_in_groups.css' %}">
+{% endblock style %}
+
+{% block h_title %}{{username}}{% endblock h_title %}
+
+{% block content %}
+<div class="grey-container">
+    <div class="g-c-title">
+        <h2>Adding in groups</h2>
+    </div>
+    <div class="g-c-content">
+        {% if data.data %}
+            {% for d in data.data %}
+                {% if d.in_group == False or d.in_group == 'False' %}
+                    <div class="card" data-prof-id="{{data.prof_id}}" data-group-id="{{ d.id }}" data-in-group="{{ d.in_group }}">
+                        <div class="c-info">
+                            <div class="c-circle"></div>
+                            <div class="c-text">
+                                <h2>{{ d.name }}</h2>
+                                <h6>{{ d.created_at|slice:":10" }}</h6>
+                            </div>
+                        </div>
+                        <div class="c-end">
+                            <button class="c-btn add-btn" data-prof-id="{{data.prof_id}}" data-group-id="{{ d.id }}">➕</button>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <h1>No groups available</h1>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grey-container">
+    <div class="g-c-title">
+        <h2>In groups</h2>
+    </div>
+    <div class="g-c-content">
+        {% if data.data %}
+            {% for d in data.data %}
+                {% if d.in_group == True or d.in_group == 'True' %}
+                    <div class="card" data-prof-id="{{data.prof_id}}" data-group-id="{{ d.id }}" data-in-group="{{ d.in_group }}">
+                        <div class="c-info">
+                            <div class="c-circle"></div>
+                            <div class="c-text">
+                                <h2>{{ d.name }}</h2>
+                                <h6>{{ d.created_at|slice:":10" }}</h6>
+                            </div>
+                        </div>
+                        <div class="c-end">
+                            <button class="c-btn remove-btn" data-prof-id="{{data.prof_id}}" data-group-id="{{ d.id }}">✖</button>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <h1>No groups yet</h1>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Добавление в группу
+    document.querySelectorAll('.add-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const groupId = this.getAttribute('data-group-id');
+            const profId = this.getAttribute('data-prof-id');
+            
+            fetch(`/adding/${profId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    type: 'add_to_groups',
+                    group_id: groupId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                location.reload();
+            });
+        });
+    });
+    
+    // Удаление из группы
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const groupId = this.getAttribute('data-group-id');
+            const profId = this.getAttribute('data-prof-id');
+            fetch(`/adding/${profId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    type: 'delete_from_groups',
+                    group_id: groupId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                location.reload();
+            });
+        });
+    });
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock content %}

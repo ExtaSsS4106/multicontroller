@@ -1,0 +1,249 @@
+.grey-container {
+    width: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+}
+
+.g-c-title {
+    color: aliceblue;
+    height: 100px;
+    width: 85%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+}
+
+.g-c-content {
+    width: 90%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 30px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    scrollbar-width: thin;
+}
+
+.g-c-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.g-c-content::-webkit-scrollbar-track {
+    background: #e0d8d0;
+    border-radius: 4px;
+}
+
+.g-c-content::-webkit-scrollbar-thumb {
+    background: #596E79;
+    border-radius: 4px;
+}
+
+.g-c-content::-webkit-scrollbar-thumb:hover {
+    background: #3d4f56;
+}
+
+.g-c-content > * {
+    max-width: 100%;
+    flex-shrink: 0;
+}
+
+.s-btns, .entry, .users-in {
+    width: 80%;
+}
+
+.entry {
+    padding: 10px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #ffffff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.entry:focus {
+    border-color: #596E79;
+    box-shadow: 0 0 0 3px rgba(89, 110, 121, 0.2);
+}
+
+.entry::placeholder {
+    color: #9ca3af;
+}
+
+.users-in {
+    height: 400px;
+    background: #596E79;
+    border-radius: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.users-in::-webkit-scrollbar {
+    width: 8px;
+}
+
+.users-in::-webkit-scrollbar-track {
+    background: #C7B198;
+    border-radius: 4px;
+}
+
+.users-in::-webkit-scrollbar-thumb {
+    background: #DFD3C3;
+    border-radius: 4px;
+}
+
+.selected-user {
+    width: 95%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #C7B198;
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-sizing: border-box;
+}
+
+.selected-user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.selected-user-circle {
+    width: 40px;
+    height: 40px;
+    background: #DFD3C3;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #596E79;
+}
+
+.selected-user-name {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+.remove-user-btn {
+    background: #62202B;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.empty-message {
+    text-align: center;
+    color: #DFD3C3;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    padding: 20px;
+}
+
+.s-btns {
+    min-height: 100px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.red-btn, .green-btn {
+    width: 120px;
+    height: 40px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.red-btn {
+    background: #62202B;
+    color: #FFFFFF;
+}
+
+.green-btn {
+    background: #005238;
+    color: #FFFFFF;
+}
+
+.card {
+    width: 100%;
+    background: #E6E1DF;
+    border-radius: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.c-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.c-circle {
+    width: 50px;
+    height: 50px;
+    background: #CFB9B2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #596E79;
+}
+
+.c-text h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.c-text h6 {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.c-end .c-btn {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}

@@ -1,0 +1,25 @@
+{% extends "main/template.html" %}
+{% load static %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'main/forms/notes/note/note.css' %}">
+
+{% endblock style %}
+{% block h_title %}{{data.title}}{% endblock h_title %}
+{% block content %}
+<div class="grey-container">
+    <div class="navigation">
+      <div class="n-left">
+        <h2>{{data.title}}</h2>
+      </div>
+      <div class="n-right">
+        <h2>Creator: {{data.username}}</h2>
+      </div>
+    </div>
+    <div class="content">
+        <h2 class="desc">Descroption</h2>
+        <text class="text">{{data.description}}</text>
+        <div class="card">{{data.file_name}}</div>
+        <div class="date">{{data.updated_at}}</div>
+    </div>
+</div>
+{% endblock content %}

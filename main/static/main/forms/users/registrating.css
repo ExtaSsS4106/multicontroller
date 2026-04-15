@@ -3,10 +3,7 @@
     gap: 10px;
     padding-bottom: 30px;
 }
-.reg-buttons, .reg-fields, .reg-title{
-    min-height: 150px;
-    width: 80%;
-}
+
 .reg-title{
     color: aliceblue;
     display: flex;
@@ -27,6 +24,10 @@
 }
 .entry{
     height: 60px;
+}
+.reg-buttons, .reg-fields, .reg-title{
+    min-height: 150px;
+    width: 80%;
 }
 .reg-buttons{
     display: flex;

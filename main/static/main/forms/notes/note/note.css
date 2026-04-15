@@ -1,0 +1,53 @@
+.navigation{
+    color: aliceblue;
+}
+
+.text {
+    /* Сохраняем пробелы, табуляцию и переносы строк - ЭТО ГЛАВНОЕ */
+    white-space: pre-wrap;     /* Убираем дублирование и не переопределяем ниже! */
+    
+    /* Перенос длинных слов */
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    
+    /* Автоматические переносы */
+    hyphens: auto;
+    
+    /* Моноширинный шрифт для одинаковой ширины символов */
+    font-family: 'Courier New', Consolas, monospace;
+    
+    /* Внешний вид */
+    display: block;
+    width: 100%;
+    min-height: 100px;
+    max-width: 100%;
+    padding: 8px 12px;
+    font-size: 24px;
+    color: #333333;
+    line-height: 1.4;
+    
+    /* Рамка */
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #E6E1DF;
+    
+    /* Размеры */
+    box-sizing: border-box;
+}
+
+.desc{
+    color: aliceblue;
+    align-self: flex-start;
+}
+.card{
+    color: #696969;
+    font-size: 36px;
+    align-self: flex-start;
+    max-width: 400px;
+    height: 100px;
+}
+.date{
+    color: #E9E9E9;
+      align-self: flex-end;
+}

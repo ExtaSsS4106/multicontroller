@@ -1,0 +1,28 @@
+.c-circle{
+    background-color: #9C3143;
+    color: aliceblue;
+    font-size: 60px;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+.c-end{
+    height: 50px;
+    align-items: flex-end;
+      justify-content: center;
+
+  gap: 10px;
+
+}
+.end-btns{
+    width: 200px;
+display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.h6{
+    color: #696969;
+    font-size: 10px;
+}

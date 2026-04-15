@@ -1,5 +1,9 @@
-{% extends "main/forms/users/profile/template.html" %}
+{% extends "main/forms/template.html" %}
+{% load static %}
 {% block h_title %}Users{% endblock h_title %}
+{% block style %}
+<script src="{% static 'main/forms/users/profile/forms/scripts/profiles.js' %}"></script>
+{% endblock style %}
 {% block n_right %}
 <button onclick="location.href='/register/'" class="green-btn">
   <span class="btn-icon">New user +</span>
