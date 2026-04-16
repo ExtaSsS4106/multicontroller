@@ -29,7 +29,16 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (permissions.IsAdminUser,) 
     serializer_class = RegisterSerializer
+class AmIsuperUser(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
 
+    def get(self, request):
+        user = request.user
+        if user.is_superuser:
+            status = True
+        else:
+            status = False
+        return Response({"status_admin": status})
 # Получение профиля текущего пользователя
 class ProfileView(APIView):
     permission_classes = (permissions.IsAuthenticated,)

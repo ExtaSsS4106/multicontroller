@@ -4,10 +4,13 @@ from django.urls import path
 from .views import (
     RegisterView, ProfileView, LogoutView,
     AllUsers, AllNotes, Groups, GroupInfo, CreateGroup,
-    UserNotes, Note, Statistics, ProfileContent, Requests, CreateNote, Adding_to_groups, for_addingGroupInfo
+    UserNotes, Note, Statistics, ProfileContent, Requests, CreateNote,
+    Adding_to_groups, for_addingGroupInfo,AmIsuperUser
 )
 
 urlpatterns = [
+    
+    path('api/amisuperuser/', AmIsuperUser.as_view(), name='register'),
 
     path('api/register/', RegisterView.as_view(), name='register'),
     
