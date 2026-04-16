@@ -1,0 +1,38 @@
+
+  <header>
+  <div class="title-h">
+    <h1>DesctopApp</h1>
+  </div>
+  <div class="user-h">
+    <h4>{{username}}</h4>
+    <div class="circle">
+      U
+    </div>
+  </div>
+</header>
+<section>
+  <div class="left-panel">
+    <div class="controls">
+      <button onclick="loadPage('groups');" class="c-button">Groups</button>
+      <button onclick="loadPage('main');" class="c-button">Notes</button>
+      <button onclick="loadPage('requests');" class="c-button">Requests</button>
+    </div>
+    <div class="logout-h">
+      <button onclick="loadPage('logout');" class="l-button">logout</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="main-header">
+      <h1>{% block h_title %}{% endblock h_title %}</h1>
+    </div>
+    <div class="main-section">
+        {% block content %}
+  
+        {% endblock content %}
+    </div>
+  </div>
+</section>
+  {% block scritp %}
+  
+  {% endblock scritp %}
+

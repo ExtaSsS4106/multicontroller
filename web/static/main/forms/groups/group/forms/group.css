@@ -1,0 +1,19 @@
+.navigation{
+    color: aliceblue;
+}
+.c-end{
+    height: 50px;
+    align-items: flex-end;
+      justify-content: center;
+
+  gap: 10px;
+
+}
+.green-btn{
+    height: 100px;
+}
+.h6{
+    height: 5px;
+    color: #696969;
+    font-size: 10px;
+}

@@ -1,0 +1,20 @@
+
+  <div class="auth">
+    <div class="title">
+      <h3>Authorization</h3>
+    </div>
+    
+    {% if error %}
+      <div class="error-message">
+        ⚠️ {{ error }}
+      </div>
+    {% endif %}
+    
+    <div class="fields">
+      <input id="username" class="entry" name="username" type="text" placeholder="username" autofocus>
+      <input id="password" class="entry" name="password" type="password" placeholder="password">
+    </div>
+    <div class="button-submit">
+      <button id="login-btn" type="submit" class="submit">login in</button>
+    </div>
+  </div>

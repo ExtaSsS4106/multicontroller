@@ -1,0 +1,55 @@
+{% extends "main/template.html" %}
+
+{% block h_title %}New note{% endblock h_title %}
+{% block content %}
+<div class="grey-container">
+    <div class="navigation">
+      <div class="n-left">
+        <h2>New note</h2>
+      </div>
+      <div class="n-right">
+      </div>
+    </div>
+    <div class="content">
+        <h2 class="desc">Title</h2>
+        <text id="note-title" class="text" contenteditable="true"></text>
+        <h2  class="desc">Descroption</h2>
+        <text id="note-description" class="text" contenteditable="true"></text>
+        <div class="card">Add File</div>
+        <div class="buttons-action">
+          <button class="green-btn" onclick="saveNote()">
+              <span class="btn-icon">save</span>
+          </button>  
+          <button class="yellow-btn" onclick="saveAndPush()">
+              <span class="btn-icon">save and push</span>
+          </button>  
+        </div>
+        <div class="date"></div>
+    </div>
+</div>
+
+<script>
+    function saveNote() {
+        const title = document.getElementById('note-title').innerText.trim();
+        const description = document.getElementById('note-description').innerText.trim();
+        
+        if (!title || !description) {
+            alert('Please fill title and description');
+            return;
+        }
+        
+        eel.create_note(title, description)().then(response => {
+            if (response.status === 'success') {
+                alert('Note created!');
+                loadPage('note', response.note.id);
+            } else {
+                alert('Error: ' + response.error);
+            }
+        });
+    }
+    
+    function saveAndPush() {
+        saveNote();
+    }
+</script>
+{% endblock content %}

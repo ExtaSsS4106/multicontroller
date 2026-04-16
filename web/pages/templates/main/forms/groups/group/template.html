@@ -1,0 +1,50 @@
+{% extends "main/template.html" %}
+
+
+{% block content %}
+<div class="g-users grey-container ">
+ <div class="navigation">
+        <div class="n-left">
+        {% block users_n_left %}
+
+        {% endblock users_n_left %}
+        </div>
+      <div class="n-right">
+        {% block users_n_right %}
+        
+        {% endblock users_n_right %} 
+      </div>
+    </div>
+    <div class="content">
+        {% block users_content_main %}
+        
+        {% endblock users_content_main %}    
+    </div>
+</div>
+<div class="g-notes grey-container">
+ <div class="navigation">
+      <div class="n-left">
+        <div class="n-search">
+          <input id="notes_query" class="search" type="text" placeholder="search...">
+          <button onclick="notesSearchClick({{data.data.group_id}})" class="search-btn">
+            <span class="btn-icon">🔍</span>
+          </button>          
+        </div>
+          {% block notes_n_left %}
+          
+          {% endblock notes_n_left %}
+      </div>
+      <div class="n-right">
+        <h2>Notes</h2>
+        {% block notes_n_right %}
+        
+        {% endblock notes_n_right %} 
+      </div>
+    </div>
+    <div class="content">
+        {% block notes_content_main %}
+        
+        {% endblock notes_content_main %}    
+    </div>
+</div>
+{% endblock content %}

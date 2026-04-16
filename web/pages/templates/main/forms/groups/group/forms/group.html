@@ -1,0 +1,111 @@
+{% extends "main/forms/groups/group/template.html" %}
+
+{% block h_title %}{{data.data.group_title}}{% endblock h_title %}
+
+
+
+    {% block users_n_left %}
+    <h2>Users</h2>
+    {% endblock users_n_left %}
+
+
+
+
+    {% block users_n_right %}
+
+    {% endblock users_n_right %} 
+
+    {% block users_content_main %}
+        
+            {% if data %}
+                {% for d in data.data.users %}
+                    <div 
+                    data-prof_id={{d.prof_id}} 
+                    data-user_id={{d.user_id}}
+                    class="card">
+                        <div class="c-info">
+                            <div class="c-circle"></div>
+                            <div class="c-text">
+                            <h2>{{d.name}}</h2>
+                            <h6></h6>
+                            </div>
+                        </div>
+                        <div class="c-end">
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <h1>No users</h1>
+            {% endif %}
+    {% endblock users_content_main %}    
+
+
+
+
+
+    {% block notes_n_left %}
+      
+    {% endblock notes_n_left %}
+
+
+
+
+
+    {% block notes_n_right %}
+    
+    {% endblock notes_n_right %} 
+
+
+
+
+
+    {% block notes_content_main %}
+            {% if data %}
+                {% for d in data.data.notes %}
+                    <div 
+                    data-prof_id="{{d.prof_id}}"
+                    data-user_id="{{d.user_id}}"
+                    class="card">
+                        {% if d.is_accessible == False %}
+                        <div 
+                        class="c-info">
+                            <div class="c-text">
+                            <h2>{{d.title}}</h2>
+                            <h6>{{d.file_name}}</h6>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div 
+                        onclick="loadPage('note', {{ d.id }})"
+                        class="c-info">
+                            <div class="c-text">
+                            <h2>{{d.title}}</h2>
+                            <h6>{{d.file_name}}</h6>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="c-end">
+                            {% if not d.is_accessible %}
+                                {% if d.status_request == "no_request" or d.status_request == "rejected" %}
+                                    <button class="green-btn" onclick="loadPage('send_request', { action: 'pending', note_id: {{ d.id }}, request_id: {{d.request_id}}, group_id: {{ data.data.group_id }} })">
+                                        ask access
+                                    </button>
+                                {% elif d.status_request == "pending" %}
+                                    <button class="red-btn " onclick="loadPage('send_request', { action: 'cancel', request_id: {{d.request_id}}, group_id: {{data.data.group_id}} })">
+                                        cancel request
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                            {% endif %}
+                            <button class="c-btn">
+                            </button>
+                            <div class="h6">{{d.updated_at}}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <h1>No users</h1>
+            {% endif %}
+    {% endblock notes_content_main %}    
+
+
