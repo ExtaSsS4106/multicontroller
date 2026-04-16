@@ -2,7 +2,7 @@ from functools import wraps
 from django.shortcuts import redirect, render
 from django.conf import settings
 import requests
-import jwt
+import jwt, json
 from django.http import JsonResponse
 
 
@@ -82,7 +82,24 @@ def login(request):
             json={'username': username, 'password': password},
             timeout=5
         )
-        
+        data = response.json()
+        access_token = data.get('access')
+               # Проверка is_superuser
+        try:
+            amisuperuser_response = requests.get(
+                f'{settings.BACKEND_API_URL}/api/amisuperuser/',
+                headers={'Authorization': f'Bearer {access_token}'},
+                timeout=5
+            )
+            
+            if amisuperuser_response.status_code == 200:
+                amisuperuser = amisuperuser_response.json()
+                if not amisuperuser.get('status_admin', False):
+                    # Не админ - разлогиниваем
+                    logout(request)
+                    return {"error": "You don't have admin privileges"}
+        except:
+            return {"error": "Cannot verify admin status"}
         if response.status_code == 200:
             data = response.json()
             
