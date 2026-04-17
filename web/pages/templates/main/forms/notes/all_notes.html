@@ -11,7 +11,9 @@
 
 
 {% block content_main %}
-    {% if data %}
+    {% if error %}
+    <h1>Error: {{error}}</h1>
+    {% elif  data %}
         {% for d in data.data %}
             <div 
             onclick="location.href='/server_note/{{d.id}}'"
@@ -32,6 +34,7 @@
                 </div>
             </div>
         {% endfor %}
+    
     {% else %}
         <h1>No users</h1>
     {% endif %}

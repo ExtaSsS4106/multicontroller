@@ -10,7 +10,24 @@ from .db.db import with_db
 import asyncio
 
 class Views:
-
+    def is_server_available():
+        """Проверка доступности сервера"""
+        try:
+            with open(USER_DATA, 'r', encoding='utf-8') as file:
+                data = json.load(file)
+            
+            access_token = data.get('access')
+            if not access_token:
+                return False
+            
+            response = requests.get(
+                f'{HOST}/api/profile/',
+                headers={'Authorization': f'Bearer {access_token}'},
+                timeout=3
+            )
+            return response.status_code == 200
+        except:
+            return False
     def get_user_data():
         with open(USER_DATA, 'r', encoding='utf-8') as file:
             data = json.load(file)
@@ -101,33 +118,10 @@ class Views:
         try:
             type = args.get('type') if args else None
             if not type:
-                type = 'server' # Значение по умолчанию, если type не передан
-            with open(USER_DATA, 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                print("User data loaded:", data)
+                type = 'server'
             
-            access_token = data.get('access')
-            if not access_token:
-                print("No access token found")
-                Views.set_load_page('login')
-                return render("authorisation/login.html", {"error": "Session expired"})
-            if type == 'server':
-                response = requests.get(
-                    f'{HOST}/api/profile-content/',
-                    headers={'Authorization': f'Bearer {access_token}'},
-                    timeout=5
-                )
-                print(f"Response status: {response.status_code}")
-                if response.status_code == 200:
-                    profile_data = response.json()
-                    print("Profile data received:", profile_data)
-                    return render("main/forms/users/profile/forms/profile.html", {'data': profile_data, "type": "server"})
-                else:
-                    print(f"Error: {response.status_code}")
-                    Views.set_load_page('login')
-                    return render("authorisation/login.html", {"error": "Authentication failed"})
-                
-            elif type == 'local':
+            if type == 'local':
+                # Локальный режим - всегда работает
                 @with_db
                 async def init():
                     try:
@@ -145,25 +139,49 @@ class Views:
                                 "created_at": n.created_at.isoformat(),
                                 "updated_at": n.updated_at.isoformat()
                             })
-                        
                         return data
                     except Exception as e:
                         print(f"Error fetching local profile: {e}")
                         return []
                 
                 data = asyncio.run(init())
-                print("Profile data received:", data)
                 return render("main/forms/users/profile/forms/profile.html", {
                     'data': data, 
                     "type": "local"
                 })
-                
-                
-        except requests.ConnectionError:
-            print("USER_DATA file not found")
-            Views.main({'type': 'local'})
-        except requests.ConnectionError:
-            Views.main({'type': 'local'})
+            
+            else:  # server mode
+                try:
+                    with open(USER_DATA, 'r', encoding='utf-8') as file:
+                        data = json.load(file)
+                    
+                    access_token = data.get('access')
+                    if not access_token:
+                        Views.set_load_page('login')
+                        return render("authorisation/login.html", {"error": "Session expired"})
+                    
+                    response = requests.get(
+                        f'{HOST}/api/profile-content/',
+                        headers={'Authorization': f'Bearer {access_token}'},
+                        timeout=5
+                    )
+                    
+                    if response.status_code == 200:
+                        profile_data = response.json()
+                        return render("main/forms/users/profile/forms/profile.html", {'data': profile_data, "type": "server"})
+                    else:
+                        # Если сервер не отвечает, показываем локальные данные
+                        Views.main({'type': 'local'})
+                        
+                except (requests.ConnectionError, requests.Timeout, FileNotFoundError):
+                    # Нет соединения с сервером - показываем локальные данные
+                    print("No server connection, switching to local mode")
+                    return Views.main({'type': 'local'})
+                    
+        except Exception as e:
+            print(f"Error in main: {e}")
+            # При любой ошибке показываем локальные данные
+            return Views.main({'type': 'local'})
         
     
     @eel.expose
@@ -171,23 +189,11 @@ class Views:
         try:
             with open(USER_DATA, 'r', encoding='utf-8') as file:
                 user_data = json.load(file)
-    
-            @with_db
-            async def inner():
-                try:
-                    note = await Notes.get(server_id=note_id)
-                except Exception as e:
-                    print(f"Error occurred while fetching note: {e}")
-                    note = None
-                return note.id if note else None
             
-            note =  asyncio.run(inner())
-            print("note_id: ", note_id)
-            print("local_note: ", note)
             access_token = user_data.get('access')
             if not access_token:
                 Views.set_load_page('login')
-                return {"error": "No access token", "status": "error"}
+                return render("authorisation/login.html", {"error": "Session expired"})
             
             response = requests.get(
                 f'{HOST}/api/note/{note_id}/',
@@ -195,26 +201,19 @@ class Views:
                 timeout=5
             )
             
-            print(f"Note API response status: {response.status_code}")
-            
             if response.status_code == 200:
                 note_data = response.json()
-                print(note_data)
-                # Используем ключ 'data' вместо 'note'
-                return render("main/forms/notes/note/note.html", {'data': note_data, "local_note_id": note, "type": "server"})
+                return render("main/forms/notes/note/note.html", {'data': note_data, "type": "server"})
             else:
-                Views.set_load_page('login')
-                error_msg = response.json().get('error', 'Note not found')
-                return render("main/forms/notes/note/note.html", {'error': error_msg})
+                # Пробуем показать локальную версию
+                return Views.local_note(note_id)
                 
-        except FileNotFoundError:
-            Views.set_load_page('login')
-            return render("main/forms/notes/note/note.html", {'error': 'Please login first'})
-        except requests.ConnectionError:
-            return render("main/forms/notes/note/note.html", {'error': 'Cannot connect to server'})
+        except (requests.ConnectionError, requests.Timeout):
+            # Нет соединения - показываем локальную заметку
+            return Views.local_note(note_id)
         except Exception as e:
-            print(f"Error in note: {e}")
-            return render("main/forms/notes/note/note.html", {'error': str(e)})
+            print(f"Error in server_note: {e}")
+            return Views.local_note(note_id)
     
     @eel.expose
     def local_note(note_id):
@@ -548,11 +547,9 @@ class Views:
         try:
             with open(USER_DATA, 'r', encoding='utf-8') as file:
                 data = json.load(file)
-                print("User data loaded:", data)
             
             access_token = data.get('access')
             if not access_token:
-                print("No access token found")
                 Views.set_load_page('login')
                 return render("authorisation/login.html", {"error": "Session expired"})
             
@@ -562,20 +559,19 @@ class Views:
                 timeout=5
             )
             
-            print(f"Response status: {response.status_code}")
-            
             if response.status_code == 200:
                 groups = response.json()
-                print("Groups data received:", groups)
                 return render("main/forms/groups/groups.html", {'data': groups})
             else:
-                print(f"Error: {response.status_code}")
-                Views.set_load_page('login')
-                return render("authorisation/login.html", {"error": "Authentication failed"})
+                # Пустая страница при ошибке
+                return render("main/forms/groups/groups.html", {'data': {'data': []}, 'error': 'No connection'})
                 
-        except FileNotFoundError:
-            print("USER_DATA file not found")
-            return render("main/forms/groups/groups.html")
+        except (requests.ConnectionError, requests.Timeout, FileNotFoundError):
+            # Нет соединения - пустая страница
+            return render("main/forms/groups/groups.html", {'data': {'data': []}, 'error': 'No connection'})
+        except Exception as e:
+            print(f"Error in groups: {e}")
+            return render("main/forms/groups/groups.html", {'data': {'data': []}, 'error': 'No connection'})
         
     
     @eel.expose
@@ -583,11 +579,9 @@ class Views:
         try:
             with open(USER_DATA, 'r', encoding='utf-8') as file:
                 data = json.load(file)
-                print("User data loaded:", data)
             
             access_token = data.get('access')
             if not access_token:
-                print("No access token found")
                 Views.set_load_page('login')
                 return render("authorisation/login.html", {"error": "Session expired"})
             
@@ -597,21 +591,17 @@ class Views:
                 timeout=5
             )
             
-            print(f"Response status: {response.status_code}")
-            
             if response.status_code == 200:
                 group_data = response.json()
-                print("Group data received:", group_data)
                 return render("main/forms/groups/group/forms/group.html", {'data': group_data})
             else:
-                print(f"Error: {response.status_code}")
-                Views.set_load_page('login')
-                return render("authorisation/login.html", {"error": "Authentication failed"})
+                return render("main/forms/groups/group/forms/group.html", {'error': 'Group not available'})
                 
-        except FileNotFoundError:
-            print("USER_DATA file not found")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": "Please login first"})
+        except (requests.ConnectionError, requests.Timeout, FileNotFoundError):
+            return render("main/forms/groups/group/forms/group.html", {'error': 'No connection to server'})
+        except Exception as e:
+            print(f"Error in group: {e}")
+            return render("main/forms/groups/group/forms/group.html", {'error': str(e)})
         
     
     @eel.expose
@@ -653,11 +643,9 @@ class Views:
         try:
             with open(USER_DATA, 'r', encoding='utf-8') as file:
                 data = json.load(file)
-                print("User data loaded:", data)
             
             access_token = data.get('access')
             if not access_token:
-                print("No access token found")
                 Views.set_load_page('login')
                 return render("authorisation/login.html", {"error": "Session expired"})
             
@@ -667,21 +655,17 @@ class Views:
                 timeout=5
             )
             
-            print(f"Response status: {response.status_code}")
-            
             if response.status_code == 200:
                 requests_data = response.json()
-                print("Requests data received:", requests_data)
                 return render("main/forms/requests/requests.html", {'data': requests_data})
             else:
-                print(f"Error: {response.status_code}")
-                Views.set_load_page('login')
-                return render("authorisation/login.html", {"error": "Authentication failed"})
+                return render("main/forms/requests/requests.html", {'data': {'data': []}, 'error': 'No data'})
                 
-        except FileNotFoundError:
-            print("USER_DATA file not found")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": "Please login first"})
+        except (requests.ConnectionError, requests.Timeout, FileNotFoundError):
+            return render("main/forms/requests/requests.html", {'data': {'data': []}, 'error': 'No connection'})
+        except Exception as e:
+            print(f"Error in get_requests: {e}")
+            return render("main/forms/requests/requests.html", {'data': {'data': []}, 'error': str(e)})
         
         
         

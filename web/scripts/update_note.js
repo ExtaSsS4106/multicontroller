@@ -140,8 +140,6 @@ class UpdateNote {
             // Сначала обновляем заметку
             const response = await eel.update_note(title, description, noteId)();
 
-            console.log('Update response:', response);
-            console.log('Local update response:', localResponse);
 
             if (response.status === 'success') {
                 // Если есть выбранный новый файл, загружаем его
@@ -153,7 +151,7 @@ class UpdateNote {
                 this.showMessage('Note updated and pushed!', 'success');
                 setTimeout(() => {
                     if (response.note && response.note.id) {
-                        loadPage('note', response.note.id);
+                        loadPage('server_note', response.note.id);
                     } else {
                         loadPage('main');
                     }

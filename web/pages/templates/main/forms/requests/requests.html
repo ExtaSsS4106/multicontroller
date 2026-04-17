@@ -7,7 +7,9 @@
 
 
 {% block content_main %}
-    {% if data %}
+    {% if error %}
+    <h1>Error: {{error}}</h1>
+    {% elif  data %}
         {% for d in data.data %}
             <div 
             data-req_id={{d.id}} 

@@ -60,7 +60,9 @@
 
 
     {% block notes_content_main %}
-            {% if data %}
+            {% if error %}
+            <h1>Error: {{error}}</h1>
+            {% elif  data %}
                 {% for d in data.data.notes %}
                     <div 
                     data-prof_id="{{d.prof_id}}"
@@ -103,6 +105,7 @@
                         </div>
                     </div>
                 {% endfor %}
+            
             {% else %}
                 <h1>No users</h1>
             {% endif %}
