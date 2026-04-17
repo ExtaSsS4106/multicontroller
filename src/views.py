@@ -2,6 +2,7 @@ import eel
 import os, requests, json
 from .settings import *
 from .render import render
+import base64
 
 class Views:
 
@@ -72,7 +73,7 @@ class Views:
             return render("authorisation/login.html")
         
         
-        
+    
     
     @eel.expose
     def main():
@@ -259,7 +260,72 @@ class Views:
             print(f"Error in update_note: {e}")
             return {"status": "error", "error": str(e)}
         
-        
+    @eel.expose
+    def upload_file(file_name, file_data_base64, note_id):
+        """Загрузка файла к заметке"""
+        try:
+            with open(USER_DATA, 'r', encoding='utf-8') as f:
+                user_data = json.load(f)
+            
+            access_token = user_data.get('access')
+            if not access_token:
+                return {"status": "error", "error": "No access token"}
+            
+            # Декодируем base64 в байты
+            file_bytes = base64.b64decode(file_data_base64)
+            
+            # Отправляем на бэкенд
+            files = {'file': (file_name, file_bytes)}
+            
+            response = requests.post(
+                f'{HOST}/api/upload-file/{note_id}/',
+                headers={'Authorization': f'Bearer {access_token}'},
+                files=files,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                error_msg = response.json().get('error', 'Upload failed')
+                return {"status": "error", "error": error_msg}
+                
+        except FileNotFoundError:
+            return {"status": "error", "error": "Please login first"}
+        except requests.ConnectionError:
+            return {"status": "error", "error": "Cannot connect to server"}
+        except Exception as e:
+            print(f"Error in upload_file: {e}")
+            return {"status": "error", "error": str(e)}
+
+    @eel.expose
+    def download_note_file(note_id):
+        """Скачивание файла заметки"""
+        try:
+            with open(USER_DATA, 'r', encoding='utf-8') as f:
+                user_data = json.load(f)
+            
+            access_token = user_data.get('access')
+            if not access_token:
+                return {"status": "error", "error": "No access token"}
+            
+            response = requests.get(
+                f'{HOST}/api/download-file/{note_id}/',
+                headers={'Authorization': f'Bearer {access_token}'}
+            )
+            
+            if response.status_code == 200:
+                return {
+                    "status": "success",
+                    "file_data": base64.b64encode(response.content).decode('utf-8'),
+                    "file_name": response.headers.get('Content-Disposition', '').split('filename=')[-1].strip('"')
+                }
+            else:
+                return {"status": "error", "error": "File not found"}
+                
+        except Exception as e:
+            print(f"Error in download_note_file: {e}")
+            return {"status": "error", "error": str(e)}    
     @eel.expose
     def groups():
         try:

@@ -59,3 +59,47 @@
     color: #E9E9E9;
       align-self: flex-end;
 }
+
+/* Полностью убираем дефолтные стили — оставляем только кнопку */
+#file-input {
+    /* Убираем рамку, фон, тени */
+    border: none;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    width: 120px;
+    /* Убираем отступы и внутренние отступы */
+    margin: 0;
+    padding: 0;
+    
+    /* Стандартный размер для кнопки (можно менять) */
+    font-size: 14px;
+    font-family: inherit;
+    
+    /* Убираем текст "Файл не выбран" (только в WebKit) */
+    color: transparent;
+}
+
+/* Для WebKit браузеров (Chrome, Safari, Edge) — убираем псевдоэлементы */
+#file-input::file-selector-button {
+    /* Это и есть сама кнопка — её можно стилизовать */
+    border: none;
+    background: #CC986D;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+/* Эффект при наведении на кнопку */
+#file-input::file-selector-button:hover {
+    background: #bda089;
+}
+
+/* Для Firefox — скрываем лишний текст */
+#file-input {
+    color: transparent;
+}

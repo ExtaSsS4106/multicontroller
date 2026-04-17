@@ -18,7 +18,21 @@
         <text id="note-title" class="text" contenteditable="true">{{ data.title }}</text>
         <h2 class="desc">Descroption</h2>
         <text id="note-description" class="text" contenteditable="true">{{ data.description }}</text>
-        <div class="card">{{data.file_name}}</div>
+          <div class="card">
+            <div class="c-info">
+                <div class="c-text">
+                <h2 id="file-title">{{data.file_name}}</h2>
+                <h6></h6>
+                </div>
+            </div>
+            <div class="c-end">
+                <input type="file" id="file-input" style="display: none;">
+                <button class="green-btn" onclick="document.getElementById('file-input').click()">
+                    <span class="btn-icon">Upload File</span>
+                </button>
+            </div>
+                
+          </div>
         <div class="buttons-action">
           <button class="green-btn">
               <span onclick="updateNote();" class="btn-icon">save</span>
