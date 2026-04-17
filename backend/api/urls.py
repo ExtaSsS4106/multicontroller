@@ -7,8 +7,12 @@ from .views import (
     UserNotes, Note, Statistics, ProfileContent, Requests, CreateNote,
     Adding_to_groups, for_addingGroupInfo,AmIsuperUser
 )
-
+from .file_menager import UploadFile, DownloadFile
 urlpatterns = [
+    
+    path('api/download-file/<str:file_hash>/', DownloadFile.as_view(), name='download-file'),
+    
+    path('api/upload-file/<int:note_id>/', UploadFile.as_view(), name='upload-file'),
     
     path('api/amisuperuser/', AmIsuperUser.as_view(), name='register'),
 
@@ -29,6 +33,7 @@ urlpatterns = [
     path('api/groups/', Groups.as_view(), name='groups'),
     
     path('api/group-info/<int:group_id>/', GroupInfo.as_view(), name='group-info'),
+    
     path('api/group-info-for-adding/<int:group_id>/', for_addingGroupInfo.as_view(), name='group-info-for-adding'),
     
     path('api/create-group/', CreateGroup.as_view(), name='create-group'),

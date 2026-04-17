@@ -10,7 +10,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Count, Q
 import json
-
+from django.urls import reverse
 # Регистрация пользователя
 class RegisterView(generics.CreateAPIView):
     """
@@ -188,8 +188,13 @@ class Groups(APIView):
     def get(self, request):
         response = []
         if not request.user.is_superuser:
-            pg = prof_group.objects.filter(profile__user=request.user).order_by("-id")
-            groups_ = groups.objects.filter(id=pg.group.id).order_by("-id")
+            # Получаем ID групп, в которых состоит пользователь
+            group_ids = prof_group.objects.filter(
+                profile__user=request.user
+            ).values_list('group_id', flat=True)
+
+            # Получаем сами группы
+            groups_ = groups.objects.filter(id__in=group_ids).order_by("-id")
             for group in groups_:
                 response.append({
                     "id": group.id,
@@ -320,6 +325,9 @@ class GroupInfo(APIView):
             if pg.filter(profile=profile).exists():
                 users = []
                 notes = []
+                accessible_note_ids = accesseble_notes.objects.filter(
+                    profile=profile
+                ).values_list('note_id', flat=True)
                 for item in pg:
                     if item.profile.user.is_superuser:
                         continue
@@ -329,10 +337,14 @@ class GroupInfo(APIView):
                         "name": item.profile.user.username,
                     })
                 for item in ng:
+                    request_obj = requests.objects.filter(note=item.note, profile=profile).first()
                     notes.append({
                         "id": item.note.id,
                         "title": item.note.title,
                         "file_name": item.note.file_name,
+                        "is_accessible": item.note.id in accessible_note_ids,
+                        "request_id": request_obj.id if request_obj else -1,
+                        "status_request": request_obj.status if request_obj else "no_request",
                         "updated_at": item.note.updated_at.strftime("%d.%m.%Y %H:%M"),
                     })
                 response= {
@@ -582,6 +594,10 @@ class Note(APIView):
     def get(self, request, note_id):
         profile = profiles.objects.get(user=request.user)
         note = get_object_or_404(notes,id=note_id)
+        download_url = None
+        if note.file_link:
+            relative_url = reverse('download-file', args=[note.file_hash])
+            download_url = request.build_absolute_uri(relative_url)
         if profile.user.is_superuser:
             return Response({
                     
@@ -594,7 +610,7 @@ class Note(APIView):
                     "username": note.profile.user.username,
                     "created_at": note.created_at.strftime("%d.%m.%Y %H:%M"),
                     "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
-                    
+                    "download_url": download_url
             })
         else:
             an = accesseble_notes.objects.filter(note=note,profile=profile)
@@ -603,14 +619,14 @@ class Note(APIView):
                         
                         "id": note.id,
                         "title": note.title,
-                        "file_link": note.file_link,
+                        "file_link": str(note.file_link) if note.file_link else None,
                         "file_name": note.file_name,
                         "user_id": note.profile.user.id,
                         "description": note.description,
                         "username": note.profile.user.username,
                         "created_at": note.created_at.strftime("%d.%m.%Y %H:%M"),
                         "updated_at": note.updated_at.strftime("%d.%m.%Y %H:%M"),
-                        
+                        "download_url": download_url
                 })
             else:
                 return Response({
@@ -644,7 +660,7 @@ class Note(APIView):
             note.description = description
         note.save()
         
-        statistics.objects.update_or_create(
+        statistics.objects.create(
             profile=profile,
             action='update'
         )
@@ -676,7 +692,7 @@ class Note(APIView):
                 }, status=status.HTTP_403_FORBIDDEN)
         
         note.delete()
-        statistics.objects.update_or_create(
+        statistics.objects.create(
             profile=profile,
             action='delete',
         )
@@ -708,7 +724,7 @@ class CreateNote(APIView):
             profile=profile,
             note=note
         )
-        statistics.objects.update_or_create(
+        statistics.objects.create(
             profile=profile,
             action='create',
         )
@@ -727,6 +743,7 @@ class Statistics(APIView):
 
     def get(self, request):
         last_7_days = timezone.now() - timedelta(days=7)
+        
         requests_by_day = statistics.objects.filter(
             created_at__gte=last_7_days
         ).extra(
@@ -738,29 +755,39 @@ class Statistics(APIView):
         requests_7_d = []
         
         for item in requests_by_day:
-            date_obj = item['day']  
+            date_obj = item['day']
             
-            year = date_obj.year    
-            month = date_obj.month    
-            day = date_obj.day  
+            year = date_obj.year
+            month = date_obj.month
+            day = date_obj.day
             
             requests_7_d.append({
                 "day": day,
                 "month": month,
                 "year": year,
                 "count": item['count']
-                
-            })     
-            
+            })
+        
+        # Исправленный top_5_users
         top_5_users = statistics.objects.values(
-            username = 'profile__user__username',  
-            user_id = 'profile__user__id'               
+            'profile__user__username',
+            'profile__user__id'
         ).annotate(
             total_requests=Count('id')
         ).order_by('-total_requests')[:5]
+        
+        # Преобразуем в нужный формат
+        top_5_users_list = []
+        for user in top_5_users:
+            top_5_users_list.append({
+                'username': user['profile__user__username'],
+                'user_id': user['profile__user__id'],
+                'total_requests': user['total_requests']
+            })
+        
         return Response({
             "requests_by_last_7_days": requests_7_d,
-            "top_5_users": list(top_5_users)
+            "top_5_users": top_5_users_list
         })
 
 
@@ -968,7 +995,7 @@ class Requests(APIView):
                 })
         else:
             profile = profiles.objects.get(user=request.user)
-            all_req_list = requests.objects.filter(profile=profile)
+            all_req_list = requests.objects.filter(profile=profile).order_by("-id")
             for req_item in all_req_list:
                 if req_item.status == 'rejected':
                     continue
@@ -989,32 +1016,46 @@ class Requests(APIView):
         
         profile = profiles.objects.get(user=request.user)
         details = []
-        
+        print(data)
         if action == "pending" and not request.user.is_superuser:
             note_id = data.get('note_id')
+            request_id = data.get('request_id')
             note = get_object_or_404(notes, id=note_id)
             an = accesseble_notes.objects.filter(profile=profile, note=note)
             
             if an.exists():
                 return Response({"details": "you already have access for this note"})
+            
             profile_obj = profiles.objects.get(user=request.user)
-            
-            existing_request = requests.objects.filter(
-                profile=profile_obj, 
-                note=note
-            ).first() 
-            
-            if existing_request.status=="pending":
-                details.append({"error": "Request already exists"})
+            if request_id != -1:
+                existing_request = requests.objects.get(
+                    id=request_id,
+                )
+                if existing_request.status == "pending":
+                    details.append({"error": "Request already exists"})
+                else:
+                    # Если запрос есть, но статус не pending (например rejected)
+                    # Можно обновить или создать новый
+                    req = requests.objects.update(
+                        profile=profile_obj,
+                        note=note,
+                        status="pending"
+                    )
+                    req = requests.objects.get(id=request_id)
+                    details.append({"request_id": req.id})
             else:
+                # Запроса нет - создаём новый
                 req = requests.objects.create(
                     profile=profile_obj,
                     note=note,
                     status="pending"
                 )
                 details.append({"request_id": req.id})
+                
         elif action == "approved" and request.user.is_superuser:
             request_id = data.get('request_id')
+            note_id = data.get('note_id')
+            note = get_object_or_404(notes, id=note_id)
             profile = profiles.objects.get(user__id=data.get('user_id'))
             an, created = accesseble_notes.objects.get_or_create(
                 profile=profile,

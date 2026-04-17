@@ -14,6 +14,7 @@ class notes(models.Model):
     description = models.CharField(max_length=255, null=False)
     file_link = models.FileField(upload_to='files/', null=True)
     file_name = models.CharField(max_length=255, null=True)
+    file_hash = models.CharField(max_length=255, null=True)
     profile = models.ForeignKey(profiles, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -27,7 +28,7 @@ class groups(models.Model):
        
 class requests(models.Model):
     id = models.AutoField(primary_key=True)
-    TYPE_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')]
+    TYPE_CHOICES = [('pending', 'Pending'),('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')]
     profile = models.ForeignKey(profiles, on_delete=models.CASCADE)
     note = models.ForeignKey(notes, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
