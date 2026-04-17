@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.db.models import Count, Q
 import json
 from django.urls import reverse
+import os
 # Регистрация пользователя
 class RegisterView(generics.CreateAPIView):
     """
@@ -53,6 +54,20 @@ class ProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ProfileInfo(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, user_id):
+        profile = get_object_or_404(profiles, user__id=user_id)
+        response = {
+            "user_id": profile.user.id,
+            "profile_id": profile.id,
+            "username": profile.user.username,
+            "email": profile.user.email,
+            "date_joined": profile.user.date_joined,
+        }
+        return Response(response)
 
 # Логаут (добавляем refresh-токен в чёрный список)
 class LogoutView(APIView):
@@ -678,27 +693,56 @@ class Note(APIView):
 
     def delete(self, request, note_id):
         profile = profiles.objects.get(user=request.user)
-
+        
         try:
             note = notes.objects.get(id=note_id)
         except notes.DoesNotExist:
             return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
-                
-        if note.profile != profile or request.user.is_superuser:
+        
+        # ✅ Правильная проверка прав
+        has_permission = False
+        
+        if request.user.is_superuser:
+            has_permission = True
+        elif note.profile == profile:
+            has_permission = True
+        else:
+            # Проверяем доступ через accesseble_notes
             an = accesseble_notes.objects.filter(note=note, profile=profile)
-            if not an.exists():
-                return Response({
-                    "error": "no permission"
-                }, status=status.HTTP_403_FORBIDDEN)
+            if an.exists():
+                has_permission = True
+        
+        if not has_permission:
+            return Response({
+                "error": "no permission"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Удаляем файл если есть
+        if note.file_link:
+            try:
+                file_path = note.file_link.path
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except:
+                pass
+        
+        # Удаляем папку с хэшем если есть
+        if note.file_hash:
+            file_hash_path = os.path.join('media', 'uploads', note.file_hash)
+            if os.path.exists(file_hash_path):
+                import shutil
+                shutil.rmtree(file_hash_path)
         
         note.delete()
+        
         statistics.objects.create(
             profile=profile,
             action='delete',
         )
+        
         return Response({
             "message": "Note deleted successfully"
-        },  status=status.HTTP_204_NO_CONTENT)
+        }, status=status.HTTP_200_OK)  # 200 вместо 204
     
 class CreateNote(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -981,7 +1025,7 @@ class Requests(APIView):
         if request.user.is_superuser:
             all_req_list = requests.objects.all().order_by("-id")
             for req_item in all_req_list:
-                if req_item.status == 'rejected':
+                if req_item.status == 'rejected' or req_item.status == 'approved':
                     continue
                 response.append({
                     "id": req_item.id,
@@ -997,7 +1041,7 @@ class Requests(APIView):
             profile = profiles.objects.get(user=request.user)
             all_req_list = requests.objects.filter(profile=profile).order_by("-id")
             for req_item in all_req_list:
-                if req_item.status == 'rejected':
+                if req_item.status == 'rejected' or req_item.status == 'approved':
                     continue
                 response.append({
                     "id": req_item.id,

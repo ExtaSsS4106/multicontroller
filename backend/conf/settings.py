@@ -107,11 +107,11 @@ WSGI_APPLICATION = 'conf.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'multicontroller',
-        'USER': 'root',
-        'PASSWORD': '0000',
-        'HOST': 'localhost',  # или IP-адрес сервера
-        'PORT': '5432',       # стандартный порт PostgreSQL
+        'NAME': os.environ.get('DB_NAME', 'multicontroller'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', '0000'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 

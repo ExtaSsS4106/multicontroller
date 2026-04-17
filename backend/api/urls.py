@@ -5,12 +5,14 @@ from .views import (
     RegisterView, ProfileView, LogoutView,
     AllUsers, AllNotes, Groups, GroupInfo, CreateGroup,
     UserNotes, Note, Statistics, ProfileContent, Requests, CreateNote,
-    Adding_to_groups, for_addingGroupInfo,AmIsuperUser
+    Adding_to_groups, for_addingGroupInfo,AmIsuperUser, ProfileInfo
 )
 from .file_menager import UploadFile, DownloadFile
 urlpatterns = [
     
     path('api/download-file/<str:file_hash>/', DownloadFile.as_view(), name='download-file'),
+    
+    path('api/profile-info/', ProfileInfo.as_view(), name='profile-info'),
     
     path('api/upload-file/<int:note_id>/', UploadFile.as_view(), name='upload-file'),
     

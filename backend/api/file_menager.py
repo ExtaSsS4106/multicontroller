@@ -12,17 +12,20 @@ import uuid
 class UploadFile(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     
-    def post(self, request, note_id):
+    def post(self, request, note_id, hash_value=None):
         file = request.FILES.get('file')
         
         if not file or not note_id:
             return Response({"error": "No file or note_id"}, status=400)
         note = get_object_or_404(notes, id=note_id)
         
-        hash_value = uuid.uuid4().hex
-        while notes.objects.filter(file_hash=hash_value).exists():
+        if hash_value != note.file_hash or hash_value is None:
             hash_value = uuid.uuid4().hex
-        
+            while notes.objects.filter(file_hash=hash_value).exists():
+                hash_value = uuid.uuid4().hex
+        old_file_path = note.file_link.path if note.file_link else None
+        if old_file_path and default_storage.exists(old_file_path):
+            default_storage.delete(old_file_path)
         # Сохраняем файл
         file_path = default_storage.save(f'uploads/{hash_value}/{file.name}', ContentFile(file.read()))
         
