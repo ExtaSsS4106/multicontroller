@@ -2,24 +2,43 @@
 {% load static %}
 {% block style %}
 <link rel="stylesheet" href="{% static 'main/forms/notes/note/note.css' %}">
-
 {% endblock style %}
-{% block h_title %}{{data.title}}{% endblock h_title %}
+
+{% block h_title %}{{ data.title }}{% endblock h_title %}
+
 {% block content %}
 <div class="grey-container">
     <div class="navigation">
-      <div class="n-left">
-        <h2>{{data.title}}</h2>
-      </div>
-      <div class="n-right">
-        <h2>Creator: {{data.username}}</h2>
-      </div>
+        <div class="n-left">
+            <h2>{{ data.title }}</h2>
+        </div>
+        <div class="n-right">
+            <h2>Creator: {{ data.username }}</h2>
+        </div>
     </div>
     <div class="content">
-        <h2 class="desc">Descroption</h2>
-        <text class="text">{{data.description}}</text>
-        <div class="card">{{data.file_name}}</div>
-        <div class="date">{{data.updated_at}}</div>
+        <h2 class="desc">Description</h2>
+        <text class="text">{{ data.description }}</text>
+        
+        <div class="card">
+            {% if data.file_name and data.file_name != 'None' %}
+                <div class="c-info">
+                  <div class="c-text">
+                    <h3>{{ data.file_name }}</h3>
+                  </div>  
+                    <a href="{{ data.download_url }}" class="download-btn" download>
+                        📥 Download
+                    </a>
+                  
+                </div>
+            {% else %}
+                <div class="no-file">
+                    📄 No file attached
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="date">{{ data.updated_at }}</div>
     </div>
 </div>
 {% endblock content %}

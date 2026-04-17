@@ -1,11 +1,105 @@
 {% extends "main/template.html" %}
 {% load static %}
-{% block h_title %}Main{% endblock h_title %}
+{% block h_title %}Statistics{% endblock h_title %}
 {% block style %}
 <link rel="stylesheet" href="{% static 'main/forms/main/main.css' %}">
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock style %}
 {% block content %}
-<div class="grey-container"></div>
-<div class="blue-container"></div>
+<div class="grey-container">
+    <div class="g-c-content">
+        <h2>Liders</h2>
+        {% if statistics.top_5_users %}
+            {% for d in statistics.top_5_users %}
+                <div class="card">
+                    <div class="c-info">
+                        <div class="c-circle">
+                            {% if forloop.counter == 1 %}🥇
+                            {% elif forloop.counter == 2 %}🥈
+                            {% elif forloop.counter == 3 %}🥉
+                            {% else %}{{ forloop.counter }}{% endif %}
+                        </div>
+                        <div class="c-text">
+                            <h2 class="c-title">{{ d.username }}</h2>
+                            <h6>Requests: {{ d.total_requests }}</h6>
+                        </div>
+                    </div>
+                    <div class="c-end">
+                        <div class="request-count">{{ d.total_requests }} req</div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <h1>No users</h1>
+        {% endif %}
+    </div>
+</div>
+<div class="blue-container">
+    <h2>Statistics</h2>
+    <div class="graff">
+        <canvas id="dailyChart"></canvas>
+    </div>
+</div>
 {% endblock content %}
+
+{% block scritp %}
+<script>
+    const dailyStats = {{ statistics.requests_by_last_7_days|default:'[]'|safe }};
+    const topUsers = {{ statistics.top_5_users|default:'[]'|safe }};
+    
+    const dayLabels = dailyStats.map(item => `${item.day}.${item.month}.${item.year}`);
+    const dayCounts = dailyStats.map(item => item.count);
+    
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    new Chart(dailyCtx, {
+        type: 'bar',
+        data: {
+            labels: dayLabels,
+            datasets: [{
+                label: 'Requests',
+                data: dayCounts,
+                backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(255, 159, 64, 0.2)',
+                'rgba(255, 205, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(201, 203, 207, 0.2)'
+                ],
+                borderColor: [
+                'rgb(255, 99, 132)',
+                'rgb(255, 159, 64)',
+                'rgb(255, 205, 86)',
+                'rgb(75, 192, 192)',
+                'rgb(54, 162, 235)',
+                'rgb(153, 102, 255)',
+                'rgb(201, 203, 207)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'x',
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Requests'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+    
+
+</script>
+{% endblock scritp %}

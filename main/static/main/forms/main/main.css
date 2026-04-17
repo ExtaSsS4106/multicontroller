@@ -2,10 +2,51 @@
 width: 418px;
 height: 637px;
 border-radius: 20px;
-
+color: aliceblue;
 }
 .blue-container {
 width: 996px;
 height: 637px;
 border-radius: 19px;
+    display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  color: #E6E1DF;
+}
+.g-c-content{
+    width: 80%;
+    height: 100%;
+    display: flex;
+
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+}
+.graff{
+    margin-bottom: 30px;
+    width: 90%;
+     flex-grow: 1;
+    padding: 10px;
+    border-radius: 20px;
+    background-color: #E6E1DF;
+    display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+
+.card{
+    background-color: #E6E1DF;
+    color: rgb(214, 130, 21);
+}
+.c-title{
+    color: black;
 }

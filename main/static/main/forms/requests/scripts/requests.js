@@ -1,4 +1,4 @@
-function approve(request_id) {
+function approve(request_id, note_id, user_id) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     fetch(`/requests/`, {
         method: 'POST',
@@ -8,14 +8,16 @@ function approve(request_id) {
         },
         body: JSON.stringify({
             action: 'approved',
-            request_id: request_id
+            request_id: request_id,
+            note_id: note_id, 
+            user_id: user_id
         })
     })
     .then(response => {
         location.reload();
     });
 }
-function cancel(request_id) {
+function cancel(request_id, note_id) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     fetch(`/requests/`, {
         method: 'POST',
@@ -25,7 +27,8 @@ function cancel(request_id) {
         },
         body: JSON.stringify({
             action: 'cancel',
-            request_id: request_id
+            request_id: request_id,
+            note_id: note_id
         })
     })
     .then(response => {

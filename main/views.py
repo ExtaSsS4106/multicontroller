@@ -27,7 +27,8 @@ def login_view(request):
 @require_auth
 def main(request):
     username = request.user_data.get('username')
-    return render(request, 'main/forms/main/main.html', {"username": username})
+    response = do_request(request, "api/statistics/")
+    return render(request, 'main/forms/main/main.html', {"username": username, "statistics": response.get('data')})
 
 
 @require_auth
@@ -145,7 +146,7 @@ def user_notes(request, user_id):
 def note(request, note_id):
     username = request.user_data.get('username')
     response = do_request(request, f"api/note/{note_id}")
-    return render(request, "main/forms/notes/note/note.html", {"username": username, "data": response.get('data')})
+    return render(request, "main/forms/notes/note/note.html", {"username": username, "data": response.get('data'), "download_url": response.get('download_url')})
 
 @require_auth
 def register(request):
@@ -165,5 +166,6 @@ def requests(request):
     if request.method == 'POST':
         username = request.user_data.get('username')
         data = json.loads(request.body)
+        print(data)
         response = do_request(request, "api/requests/", method="POST", data=data)
         return render(request, "main/forms/requests/requests.html", {"username": username, "data": response.get('data')})

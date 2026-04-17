@@ -14,6 +14,9 @@
 {% block content_main %}
     {% if data %}
         {% for d in data.data %}
+            {% if d.status == 'pending'%}
+            
+
             <div 
             data-req_id={{d.id}} 
             data-user_id={{d.user_id}} 
@@ -32,10 +35,10 @@
                 </div>
                 <div class="c-end">
                     <div class="end-btns">
-                        <button onclick="cancel({{d.id}});" class="red-btn" id="cancel-btn">
+                        <button onclick="cancel({{d.id}}, {{d.note_id}});" class="red-btn" id="cancel-btn">
                             <span class="btn-icon">cancel</span>
                         </button>  
-                        <button onclick="approve({{d.id}});" class="green-btn" id="register-btn">
+                        <button onclick="approve({{d.id}}, {{d.note_id}}, {{d.user_id}});" class="green-btn" id="register-btn">
                             <span class="btn-icon">approve</span>
                         </button>  
                     </div>
@@ -43,6 +46,8 @@
 
                 </div>
             </div>
+            {% else %}
+            {% endif %}
         {% endfor %}
     {% else %}
         <h1>No Requests</h1>
