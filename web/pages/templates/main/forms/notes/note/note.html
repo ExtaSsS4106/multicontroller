@@ -8,11 +8,19 @@
         <h2>{{data.title}}</h2>
       </div>
       <div class="n-right">
-        <h2>Creator: {{data.username}}</h2>
+        <h2>
+          {% if type == 'local' %}
+          Local
+          {% else %}
+          Creator: {{data.username}}
+          {% endif %}
+        </h2>
       </div>
     </div>
     <div
+    data-type="{{ type }}"
     data-note-id="{{ data.id }}"
+    data-note-local-id="{{ local_note_id }}"
     class="content">
         <h2 class="desc">Title</h2>
         <text id="note-title" class="text" contenteditable="true">{{ data.title }}</text>
@@ -34,14 +42,17 @@
                 
           </div>
         <div class="buttons-action">
-          <button class="green-btn">
-              <span onclick="updateNote();" class="btn-icon">save</span>
-          </button>  
-        <button class="yellow-btn">
-            <span onclick="updateNoteAndPush();" class="btn-icon">save and push</span>
-        </button>  
-        <button class="red-btn">
-            <span onclick="" class="btn-icon">delete</span>
+            {% if type == 'local' %}
+            <button onclick="updateNote();" class="green-btn">
+              <span class="btn-icon">save</span>
+            </button>  
+            {% else %}
+            <button onclick="updateNoteAndPush();" class="yellow-btn">
+              <span  class="btn-icon">save on server</span>
+            </button>
+            {% endif %}
+        <button onclick="deleteNote();" class="red-btn">
+            <span  class="btn-icon">delete</span>
         </button>  
         </div>
         <div class="date">{{data.updated_at}}</div>

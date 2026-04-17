@@ -14,7 +14,7 @@
     {% if data %}
         {% for d in data.data %}
             <div 
-            onclick="location.href='/note/{{d.id}}'"
+            onclick="location.href='/server_note/{{d.id}}'"
             data-profile_id={{d.profile_id}} 
             data-user_id={{d.user_id}} 
             class="card">

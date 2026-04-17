@@ -38,22 +38,30 @@ async function loadPage(value, args = null) {
             link.href = `../static/main/forms/requests/requests.css`;
             break;
         case "main":
-            [content, data] = await eel.main()(); 
+            [content, data] = await eel.main(args)(); 
             console.log(data);
             document.querySelector('body').innerHTML = content;
             link.href = `../static/main/forms/users/profile/forms/profiles.css`;
             let MainPage = new Main_page();
             await eel.set_load_page('main')(); 
             break;
-        case "note":
+
+        case "server_note":
             link.href = `../static/main/forms/notes/note/note.css`;
-            content = await eel.note(args)();
+            content = await eel.server_note(args)();
             document.querySelector('body').innerHTML = content;
             setTimeout(() => {
                 window.updateNotePage = new UpdateNote();
             }, 100);
             break;
-        
+        case "local_note":
+            link.href = `../static/main/forms/notes/note/note.css`;
+            content = await eel.local_note(args)();
+            document.querySelector('body').innerHTML = content;
+            setTimeout(() => {
+                window.updateNotePage = new UpdateNote();
+            }, 100);
+            break;
         case "new_note":
             link.href = `../static/main/forms/notes/note/note.css`;
             content = await eel.new_note()();

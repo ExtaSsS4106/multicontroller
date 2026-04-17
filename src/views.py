@@ -1,11 +1,32 @@
+import uuid
+
 import eel
 import os, requests, json
 from .settings import *
 from .render import render
 import base64
+from .db.models import *
+from .db.db import with_db
+import asyncio
 
 class Views:
 
+    def get_user_data():
+        with open(USER_DATA, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        response =  requests.get(
+                f'{HOST}/api/profile-info/',
+                headers={'Authorization': f'Bearer {data.get('access')}'}
+            )
+        
+        @with_db
+        async def update_local_profile(id):
+            """Обновление локального профиля данными с сервера"""
+            user = await User.get(id=id)  
+            user.name = response.json().get('username')
+            user.user_id = response.json().get('user_id')
+            user.profile_id = response.json().get('profile_id')
+            await user.save()
 
     @eel.expose
     def logout():
@@ -76,8 +97,11 @@ class Views:
     
     
     @eel.expose
-    def main():
+    def main(args):
         try:
+            type = args.get('type') if args else None
+            if not type:
+                type = 'server' # Значение по умолчанию, если type не передан
             with open(USER_DATA, 'r', encoding='utf-8') as file:
                 data = json.load(file)
                 print("User data loaded:", data)
@@ -87,46 +111,79 @@ class Views:
                 print("No access token found")
                 Views.set_load_page('login')
                 return render("authorisation/login.html", {"error": "Session expired"})
-            
-            response = requests.get(
-                f'{HOST}/api/profile-content/',
-                headers={'Authorization': f'Bearer {access_token}'},
-                timeout=5
-            )
-            
-            print(f"Response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                profile_data = response.json()
-                print("Profile data received:", profile_data)
-                return render("main/forms/users/profile/forms/profile.html", {'data': profile_data})
-            else:
-                print(f"Error: {response.status_code}")
-                Views.set_load_page('login')
-                return render("authorisation/login.html", {"error": "Authentication failed"})
+            if type == 'server':
+                response = requests.get(
+                    f'{HOST}/api/profile-content/',
+                    headers={'Authorization': f'Bearer {access_token}'},
+                    timeout=5
+                )
+                print(f"Response status: {response.status_code}")
+                if response.status_code == 200:
+                    profile_data = response.json()
+                    print("Profile data received:", profile_data)
+                    return render("main/forms/users/profile/forms/profile.html", {'data': profile_data, "type": "server"})
+                else:
+                    print(f"Error: {response.status_code}")
+                    Views.set_load_page('login')
+                    return render("authorisation/login.html", {"error": "Authentication failed"})
                 
-        except FileNotFoundError:
-            print("USER_DATA file not found")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": "Please login first"})
-        except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": "Invalid user data"})
+            elif type == 'local':
+                @with_db
+                async def init():
+                    try:
+                        notes = await Notes.all()
+                        data = []
+                        for n in notes:
+                            data.append({
+                                "id": n.id,
+                                "title": n.title,
+                                "description": n.description,
+                                "file_link": n.file_link,
+                                "file_name": n.file_name,
+                                "file_hash": n.file_hash,
+                                "server_id": n.server_id,
+                                "created_at": n.created_at.isoformat(),
+                                "updated_at": n.updated_at.isoformat()
+                            })
+                        
+                        return data
+                    except Exception as e:
+                        print(f"Error fetching local profile: {e}")
+                        return []
+                
+                data = asyncio.run(init())
+                print("Profile data received:", data)
+                return render("main/forms/users/profile/forms/profile.html", {
+                    'data': data, 
+                    "type": "local"
+                })
+                
+                
         except requests.ConnectionError:
-            print("Connection error to backend")
-            return render("authorisation/login.html", {"error": "Cannot connect to server"})
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": str(e)})
+            print("USER_DATA file not found")
+            Views.main({'type': 'local'})
+        except requests.ConnectionError:
+            Views.main({'type': 'local'})
+        
     
     @eel.expose
-    def note(note_id):
+    def server_note(note_id):
         try:
             with open(USER_DATA, 'r', encoding='utf-8') as file:
                 user_data = json.load(file)
+    
+            @with_db
+            async def inner():
+                try:
+                    note = await Notes.get(server_id=note_id)
+                except Exception as e:
+                    print(f"Error occurred while fetching note: {e}")
+                    note = None
+                return note.id if note else None
             
+            note =  asyncio.run(inner())
+            print("note_id: ", note_id)
+            print("local_note: ", note)
             access_token = user_data.get('access')
             if not access_token:
                 Views.set_load_page('login')
@@ -144,7 +201,7 @@ class Views:
                 note_data = response.json()
                 print(note_data)
                 # Используем ключ 'data' вместо 'note'
-                return render("main/forms/notes/note/note.html", {'data': note_data})
+                return render("main/forms/notes/note/note.html", {'data': note_data, "local_note_id": note, "type": "server"})
             else:
                 Views.set_load_page('login')
                 error_msg = response.json().get('error', 'Note not found')
@@ -156,10 +213,48 @@ class Views:
         except requests.ConnectionError:
             return render("main/forms/notes/note/note.html", {'error': 'Cannot connect to server'})
         except Exception as e:
-            Views.set_load_page('login')
             print(f"Error in note: {e}")
             return render("main/forms/notes/note/note.html", {'error': str(e)})
+    
+    @eel.expose
+    def local_note(note_id):
+        try:
+            with open(USER_DATA, 'r', encoding='utf-8') as file:
+                user_data = json.load(file)
+    
+            @with_db
+            async def inner():
+                try:
+                    note = await Notes.get(id=note_id)
+                    data = {
+                                "id": note.id,
+                                "title": note.title,
+                                "description": note.description,
+                                "file_link": note.file_link,
+                                "file_name": note.file_name,
+                                "file_hash": note.file_hash,
+                                "server_id": note.server_id,
+                                "created_at": note.created_at.isoformat(),
+                                "updated_at": note.updated_at.isoformat()
+                            }
+                except Exception as e:
+                    print(f"Error occurred while fetching local note: {e}")
+                    data = None
+                return data
             
+            data =  asyncio.run(inner())
+            if not data:
+                return render("main/forms/notes/note/note.html", {'error': 'Note not found'})
+            
+            return render("main/forms/notes/note/note.html", {'data': data, "type": "local", "local_note_id": note_id})
+                
+        except FileNotFoundError:
+            Views.set_load_page('login')
+            return render("main/forms/notes/note/note.html", {'error': 'Please login first'})
+        except Exception as e:
+            print(f"Error in local_note: {e}")
+            return render("main/forms/notes/note/note.html", {'error': str(e)})
+    
     @eel.expose
     def new_note():
         return render("main/forms/notes/note/new_note.html")
@@ -211,6 +306,100 @@ class Views:
             return {"status": "error", "error": "Cannot connect to server"}
         except Exception as e:
             print(f"Error in create_note: {e}")
+            return {"status": "error", "error": str(e)}
+        
+    
+    @with_db
+    async def create_or_update_local_note_wrapper(args):
+        """Создание или обновление заметки без отправки на бэкенд"""
+        title = args.get('title')
+        description = args.get('description')
+        note_id = args.get('note_id')
+        server_id = args.get('server_id')
+        print("Note ID: ", note_id)
+        if note_id is not None and note_id != '':
+            note = await Notes.get(id=note_id)
+            note.title = title
+            note.description = description
+            note.server_id = server_id
+            await note.save()
+        else:
+            try:
+                notes = await Notes.all()
+            except:
+                notes = []
+            file_hash = uuid.uuid4().hex  # Генерируем уникальный hash для файла  
+            while any(n.file_hash == file_hash for n in notes):
+                file_hash = uuid.uuid4().hex          
+            note = await Notes.create(title=title, description=description, file_hash=file_hash, server_id=server_id)
+            
+        return {
+            "status": "success",
+            "message": "Note saved locally",
+            "note": {
+                "id": note.id,
+                "title": note.title,
+                "description": note.description,
+                "file_link": None,
+                "file_name": None,
+                "file_hash": note.file_hash
+            }
+        }
+    @eel.expose
+    def create_or_update_local_note(args):
+        return asyncio.run(Views.create_or_update_local_note_wrapper(args))
+    
+    @eel.expose
+    def delete_note(note_id, type):
+        """Удаление заметки"""
+        
+        try:
+            if type == 'server':
+                with open(USER_DATA, 'r', encoding='utf-8') as file:
+                    user_data = json.load(file)
+                
+                access_token = user_data.get('access')
+                if not access_token:
+                    return {"status": "error", "error": "No access token"}
+                
+                response = requests.delete(
+                    f'{HOST}/api/note/{note_id}/',
+                    headers={'Authorization': f'Bearer {access_token}'},
+                    timeout=5
+                )
+                
+                print(f"Delete note response status: {response.status_code}")
+                
+                if response.status_code == 200:
+                    return {"status": "success", "message": "Note deleted"}
+                else:
+                    error_msg = response.json().get('error', 'Failed to delete note')
+                    return {"status": "error", "error": error_msg}
+            elif type == 'local':
+                @with_db
+                async def delete_local_note():
+                    try:
+                        note = await Notes.get(id=note_id)
+                        if note.file_hash and note.file_name:
+                            file_path = os.path.join('media', note.file_hash ,f'{note.file_name}')
+                            folder_path = os.path.join('media', note.file_hash)
+                            if os.path.exists(file_path):
+                                os.remove(file_path)
+                            if os.path.exists(folder_path) and not os.listdir(folder_path):
+                                os.rmdir(folder_path)
+                        await note.delete()
+                        return {"status": "success", "message": "Note deleted locally"}
+                    except Exception as e:
+                        print(f"Error deleting local note: {e}")
+                        return {"status": "error", "error": str(e)}
+                
+                return asyncio.run(delete_local_note())
+        except FileNotFoundError:
+            return {"status": "error", "error": "Please login first"}
+        except requests.ConnectionError:
+            return {"status": "error", "error": "Cannot connect to server"}
+        except Exception as e:
+            print(f"Error in delete_note: {e}")
             return {"status": "error", "error": str(e)}
         
     @eel.expose
@@ -297,7 +486,35 @@ class Views:
         except Exception as e:
             print(f"Error in upload_file: {e}")
             return {"status": "error", "error": str(e)}
-
+    @with_db
+    async def local_save_file_wrapper(file_name, file_data_base64, note_id):
+        """Локальное сохранение файла к заметке"""
+        try:
+            print(f"Saving file locally: {file_name} for note ID: {note_id}")
+            note = await Notes.get(id=note_id)
+            print(f"Note found: {note.title} with current file: {note.file_name}")
+            # Декодируем base64 в байты
+            file_bytes = base64.b64decode(file_data_base64)
+            old_file = os.path.join('media', note.file_hash ,f'{note.file_name}') if note.file_hash and note.file_name else None
+            if old_file and os.path.exists(old_file):
+                os.remove(old_file)
+            # Сохраняем файл локально
+            local_path = os.path.join('media', note.file_hash ,f'{file_name}')
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, 'wb') as f:
+                f.write(file_bytes)
+            
+            note.file_name = file_name
+            note.file_link = local_path
+            await note.save()
+            return {"status": "success", "message": "File saved locally", "file_path": local_path}
+                
+        except Exception as e:
+            print(f"Error in local_save_file: {e}")
+            return {"status": "error", "error": str(e)}
+    @eel.expose
+    def local_save_file(file_name, file_data_base64, note_id):
+        return asyncio.run(Views.local_save_file_wrapper(file_name, file_data_base64, note_id))
     @eel.expose
     def download_note_file(note_id):
         """Скачивание файла заметки"""
@@ -358,19 +575,8 @@ class Views:
                 
         except FileNotFoundError:
             print("USER_DATA file not found")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": "Please login first"})
-        except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": "Invalid user data"})
-        except requests.ConnectionError:
-            print("Connection error to backend")
-            return render("authorisation/login.html", {"error": "Cannot connect to server"})
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": str(e)})
+            return render("main/forms/groups/groups.html")
+        
     
     @eel.expose
     def group(group_id):
@@ -406,17 +612,7 @@ class Views:
             print("USER_DATA file not found")
             Views.set_load_page('login')
             return render("authorisation/login.html", {"error": "Please login first"})
-        except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": "Invalid user data"})
-        except requests.ConnectionError:
-            print("Connection error to backend")
-            return render("authorisation/login.html", {"error": "Cannot connect to server"})
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": str(e)})
+        
     
     @eel.expose
     def send_request(args):
@@ -486,17 +682,7 @@ class Views:
             print("USER_DATA file not found")
             Views.set_load_page('login')
             return render("authorisation/login.html", {"error": "Please login first"})
-        except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": "Invalid user data"})
-        except requests.ConnectionError:
-            print("Connection error to backend")
-            return render("authorisation/login.html", {"error": "Cannot connect to server"})
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            Views.set_load_page('login')
-            return render("authorisation/login.html", {"error": str(e)})
+        
         
         
     @eel.expose

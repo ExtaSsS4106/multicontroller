@@ -8,7 +8,7 @@ class CreateNote {
         // Инициализация плейсхолдеров
         const titleEl = document.getElementById('note-title');
         const descEl = document.getElementById('note-description');
-        
+
         if (titleEl) {
             titleEl.addEventListener('focus', () => this.onFocus(titleEl, 'Enter title...'));
             titleEl.addEventListener('blur', () => this.onBlur(titleEl, 'Enter title...'));
@@ -72,14 +72,14 @@ class CreateNote {
         
         try {
             // Сначала создаём заметку
-            const response = await eel.create_note(title, description)();
+            const response = await eel.create_or_update_local_note({"title": title, "description": description})();
             console.log('Response:', response);
             
             if (response.status === 'success') {
                 // Если есть выбранный файл, загружаем его
                 if (this.selectedFile && response.note && response.note.id) {
                     this.showMessage('Uploading file...', 'info');
-                    await this.uploadFile(this.selectedFile, response.note.id);
+                    await this.uploadLocalFile(this.selectedFile, response.note.id);
                 }
                 
                 this.showMessage('Note created successfully!', 'success');
@@ -118,19 +118,21 @@ class CreateNote {
         try {
             // Сначала создаём заметку
             const response = await eel.create_note(title, description)();
+
             console.log('Response:', response);
             
             if (response.status === 'success') {
                 // Если есть выбранный файл, загружаем его
                 if (this.selectedFile && response.note && response.note.id) {
                     this.showMessage('Uploading file...', 'info');
+                    console.log('Note ID for upload:', response.note.id);
                     await this.uploadFile(this.selectedFile, response.note.id);
                 }
                 
                 this.showMessage('Note created and pushed!', 'success');
                 setTimeout(() => {
                     if (response.note && response.note.id) {
-                        loadPage('note', response.note.id);
+                        loadPage('server_note', response.note.id);
                     } else {
                         loadPage('main');
                     }
@@ -168,6 +170,35 @@ class CreateNote {
                 
                 try {
                     const response = await eel.upload_file(file.name, base64, noteId)();
+                    if (response.status === 'success') {
+                        this.showMessage('File uploaded!', 'success');
+                        this.selectedFile = null;
+                        resolve(true);
+                    } else {
+                        this.showMessage('Upload failed: ' + response.error, 'error');
+                        reject(response.error);
+                    }
+                } catch (error) {
+                    this.showMessage('Upload error: ' + error, 'error');
+                    reject(error);
+                }
+            };
+            reader.onerror = () => {
+                reject('File read error');
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async uploadLocalFile(file, noteId) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64 = e.target.result.split(',')[1];
+                console.log('Uploading file:', file.name, 'for note ID:', noteId);
+                
+                try {
+                    const response = await eel.local_save_file(file.name, base64, noteId)();
                     if (response.status === 'success') {
                         this.showMessage('File uploaded!', 'success');
                         this.selectedFile = null;

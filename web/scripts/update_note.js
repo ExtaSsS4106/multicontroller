@@ -49,10 +49,23 @@ class UpdateNote {
     }
     
     async updateNote() {
-        const title = document.getElementById('note-title')?.innerText.trim() || '';
-        const description = document.getElementById('note-description')?.innerText.trim() || '';
-        const noteId = document.querySelector('.content')?.getAttribute('data-note-id');
-
+        let title = document.getElementById('note-title')?.innerText.trim() || '';
+        let description = document.getElementById('note-description')?.innerText.trim() || '';
+        let noteId = document.querySelector('.content')?.getAttribute('data-note-id');
+        let localNoteId = document.querySelector('.content')?.getAttribute('data-note-local-id');
+        console.log('Note ID:', noteId, 'Local Note ID:', localNoteId);
+            // ✅ Преобразуем в число
+        if (noteId && noteId !== 'None' && noteId !== 'null') {
+            noteId = parseInt(noteId);
+        } else {
+            noteId = null;
+        }
+        
+        if (localNoteId && localNoteId !== 'None' && localNoteId !== 'null') {
+            localNoteId = parseInt(localNoteId);
+        } else {
+            localNoteId = null;
+        }
         if (!title || title === 'Enter title...') {
             this.showMessage('Please enter a title', 'error');
             return;
@@ -67,20 +80,20 @@ class UpdateNote {
         
         try {
             // Сначала обновляем заметку
-            const response = await eel.update_note(title, description, noteId)();
+            const response = await eel.create_or_update_local_note({"title": title, "description": description, "note_id": localNoteId, "server_id": noteId})();
             console.log('Update response:', response);
             
             if (response.status === 'success') {
                 // Если есть выбранный новый файл, загружаем его
                 if (this.selectedFile) {
                     this.showMessage('Uploading file...', 'info');
-                    await this.uploadFile(this.selectedFile, noteId);
+                    await this.uploadLocalFile(this.selectedFile, localNoteId);
                 }
                 
                 this.showMessage('Note updated successfully!', 'success');
                 setTimeout(() => {
                     if (response.note && response.note.id) {
-                        loadPage('note', response.note.id);
+                        loadPage('local_note', localNoteId);
                     } else {
                         loadPage('main');
                     }
@@ -95,10 +108,22 @@ class UpdateNote {
     }
     
     async updateNoteAndPush() {
-        const title = document.getElementById('note-title')?.innerText.trim() || '';
-        const description = document.getElementById('note-description')?.innerText.trim() || '';
-        const noteId = document.querySelector('.content')?.getAttribute('data-note-id');
+        let title = document.getElementById('note-title')?.innerText.trim() || '';
+        let description = document.getElementById('note-description')?.innerText.trim() || '';
+        let noteId = document.querySelector('.content')?.getAttribute('data-note-id');
+        let localNoteId = document.querySelector('.content')?.getAttribute('data-note-local-id');
+        // ✅ Преобразуем в число
+        if (noteId && noteId !== 'None' && noteId !== 'null') {
+            noteId = parseInt(noteId);
+        } else {
+            noteId = null;
+        }
         
+        if (localNoteId && localNoteId !== 'None' && localNoteId !== 'null') {
+            localNoteId = parseInt(localNoteId);
+        } else {
+            localNoteId = null;
+        }
         if (!title || title === 'Enter title...') {
             this.showMessage('Please enter a title', 'error');
             return;
@@ -114,8 +139,10 @@ class UpdateNote {
         try {
             // Сначала обновляем заметку
             const response = await eel.update_note(title, description, noteId)();
+
             console.log('Update response:', response);
-            
+            console.log('Local update response:', localResponse);
+
             if (response.status === 'success') {
                 // Если есть выбранный новый файл, загружаем его
                 if (this.selectedFile) {
@@ -183,8 +210,71 @@ class UpdateNote {
             reader.readAsDataURL(file);
         });
     }
-}
 
+    async uploadLocalFile(file, localNoteId) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64 = e.target.result.split(',')[1];
+                console.log('Uploading file:', file.name, 'for note ID:', localNoteId);
+                
+                try {
+                    const response = await eel.local_save_file(file.name, base64, localNoteId)();
+                    if (response.status === 'success') {
+                        this.showMessage('File uploaded!', 'success');
+                        this.selectedFile = null;
+                        resolve(true);
+                    } else {
+                        this.showMessage('Upload failed: ' + response.error, 'error');
+                        reject(response.error);
+                    }
+                } catch (error) {
+                    this.showMessage('Upload error: ' + error, 'error');
+                    reject(error);
+                }
+            };
+            reader.onerror = () => {
+                reject('File read error');
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async deleteNote() {
+        let noteId = document.querySelector('.content')?.getAttribute('data-note-id');
+        let type = document.querySelector('.content')?.getAttribute('data-type');
+        if (noteId && noteId !== 'None' && noteId !== 'null') {
+            noteId = parseInt(noteId);
+        } else {
+            this.showMessage('Note ID not found', 'error');
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to delete this note?')) {
+            return;
+        }
+        
+        this.showMessage('Deleting...', 'info');
+        
+        try {
+            const response = await eel.delete_note(noteId, type)();
+            if (response.status === 'success') {
+                this.showMessage('Note deleted!', 'success');
+                setTimeout(() => loadPage('main'), 1500);
+            } else {
+                this.showMessage('Error: ' + (response.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting note:', error);
+            this.showMessage('Error deleting note: ' + error, 'error');
+        }
+    }
+}
+function deleteNote() {
+    if (window.updateNotePage) {
+        window.updateNotePage.deleteNote();
+    }
+}
 // Глобальные функции для вызова из onclick
 function updateNote() {
     if (window.updateNotePage) {
