@@ -61,3 +61,6 @@ python manage.py migrate
 ```
 
 
+https://docs.google.com/presentation/d/1ox6yopAaaB3IpwndWt3-A1UMEv-fyPAxzj__FvsX9rI/edit?usp=drivesdk
+
+
