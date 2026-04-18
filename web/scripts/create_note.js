@@ -85,7 +85,7 @@ class CreateNote {
                 this.showMessage('Note created successfully!', 'success');
                 setTimeout(() => {
                     if (response.note && response.note.id) {
-                        loadPage('note', response.note.id);
+                        loadPage('main');
                     } else {
                         loadPage('main');
                     }

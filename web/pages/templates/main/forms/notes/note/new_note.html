@@ -55,7 +55,7 @@
         eel.create_note(title, description)().then(response => {
             if (response.status === 'success') {
                 alert('Note created!');
-                loadPage('note', response.note.id);
+                loadPage('main');
             } else {
                 alert('Error: ' + response.error);
             }
